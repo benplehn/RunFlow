@@ -7,6 +7,7 @@ Ce répertoire contient les workflows GitHub Actions pour l'intégration continu
 ### `ci.yml` - Continuous Integration
 
 **Déclenchement :**
+
 - Push vers `main` ou `develop`
 - Pull Request vers `main` ou `develop`
 
@@ -15,27 +16,32 @@ Ce répertoire contient les workflows GitHub Actions pour l'intégration continu
 **Jobs exécutés :**
 
 #### 1. Install & Cache Dependencies
+
 - Installe pnpm et Node.js
 - Installe les dépendances avec `--frozen-lockfile`
 - Cache le store pnpm pour les jobs suivants
 
 #### 2. Lint & Format Check
+
 - Exécute ESLint sur tout le monorepo
 - Vérifie le formatage Prettier
 - **Bloque la PR si échoue**
 
 #### 3. Build All Packages
+
 - Compile TypeScript pour tous les packages et apps
 - Upload les artifacts de build pour les jobs suivants
 - **Bloque la PR si échoue**
 
 #### 4. Unit Tests
+
 - Exécute les tests Vitest de tous les packages
 - Génère les rapports de coverage
 - Upload les rapports de coverage comme artifacts
 - **Bloque la PR si échoue**
 
 #### 5. Database Tests (pgTAP)
+
 - Démarre un service PostgreSQL (Supabase Postgres 15)
 - Installe le CLI Supabase
 - Active l'extension pgTAP
@@ -48,16 +54,19 @@ Ce répertoire contient les workflows GitHub Actions pour l'intégration continu
 - **Bloque la PR si échoue**
 
 #### 6. Validate Step 1
+
 - Vérifie la structure du monorepo
 - Confirme que tous les critères de l'étape 1 sont remplis
 - Affiche un résumé de validation
 
 #### 7. Validate Step 2
+
 - Vérifie l'infrastructure Supabase
 - Confirme que tous les critères de l'étape 2 sont remplis
 - Affiche un résumé de validation
 
 #### 8. CI Summary
+
 - Affiche un résumé final du pipeline
 - S'exécute même en cas d'échec des jobs précédents
 
@@ -67,8 +76,8 @@ Ce répertoire contient les workflows GitHub Actions pour l'intégration continu
 
 ```yaml
 env:
-  PNPM_VERSION: 9.12.2   # Version de pnpm
-  NODE_VERSION: 20       # Version de Node.js
+  PNPM_VERSION: 9.12.2 # Version de pnpm
+  NODE_VERSION: 20 # Version de Node.js
 ```
 
 ### Services PostgreSQL
@@ -94,6 +103,7 @@ services:
 **Cause :** Code non formaté ou erreurs ESLint
 
 **Solution :**
+
 ```bash
 pnpm format
 pnpm lint --fix
@@ -104,6 +114,7 @@ pnpm lint --fix
 **Cause :** Erreurs TypeScript
 
 **Solution :**
+
 ```bash
 pnpm build
 # Corriger les erreurs de typage
@@ -114,6 +125,7 @@ pnpm build
 **Cause :** Tests unitaires en échec
 
 **Solution :**
+
 ```bash
 pnpm test
 # Corriger les tests ou le code
@@ -122,11 +134,13 @@ pnpm test
 ### Le job `test-database` échoue
 
 **Causes possibles :**
+
 1. Migrations SQL invalides
 2. Tests pgTAP incorrects
 3. Schéma de base de données incomplet
 
 **Solution :**
+
 ```bash
 # Tester localement
 cd infra/docker
@@ -142,6 +156,7 @@ psql "$DATABASE_URL" -c "\dt public.*"
 ### Timeouts
 
 Si les jobs dépassent le timeout :
+
 - Vérifier les performances des tests
 - Optimiser les étapes de build
 - Vérifier la santé du runner GitHub
@@ -151,11 +166,13 @@ Si les jobs dépassent le timeout :
 Le workflow génère les artifacts suivants :
 
 ### `build-artifacts`
+
 - Durée de rétention : 1 jour
 - Contient : `apps/*/dist`, `packages/*/dist`
 - Utilisé par : jobs dépendants du build
 
 ### `coverage-reports`
+
 - Durée de rétention : 7 jours
 - Contient : Rapports de coverage Vitest
 - Utilisé par : analyse de coverage
@@ -167,6 +184,7 @@ Le workflow génère les artifacts suivants :
 Aucun secret n'est requis pour le workflow de base.
 
 Pour des workflows futurs (déploiement, etc.), vous pourriez avoir besoin de :
+
 - `SUPABASE_ACCESS_TOKEN` - Pour les déploiements Supabase
 - `DEPLOY_KEY` - Pour les déploiements
 - Autres secrets selon les besoins

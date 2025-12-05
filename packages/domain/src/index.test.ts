@@ -14,16 +14,28 @@ describe('calculateTrainingLoad', () => {
   });
 
   it('returns zeros when no sessions are provided', () => {
-    expect(calculateTrainingLoad([])).toEqual({ totalLoad: 0, averageRpe: 0, totalDurationMinutes: 0 });
+    expect(calculateTrainingLoad([])).toEqual({
+      totalLoad: 0,
+      averageRpe: 0,
+      totalDurationMinutes: 0
+    });
   });
 
   it('throws when input is not an array', () => {
-    expect(() => calculateTrainingLoad(null as unknown as [])).toThrow(TypeError);
+    expect(() => calculateTrainingLoad(null as unknown as [])).toThrow(
+      TypeError
+    );
   });
 
   it('rejects negative or zero values', () => {
-    expect(() => calculateTrainingLoad([{ distanceKm: -1, durationMinutes: 30, rpe: 5 }])).toThrow(RangeError);
-    expect(() => calculateTrainingLoad([{ distanceKm: 5, durationMinutes: 0, rpe: 5 }])).toThrow(RangeError);
-    expect(() => calculateTrainingLoad([{ distanceKm: 5, durationMinutes: 30, rpe: 0 }])).toThrow(RangeError);
+    expect(() =>
+      calculateTrainingLoad([{ distanceKm: -1, durationMinutes: 30, rpe: 5 }])
+    ).toThrow(RangeError);
+    expect(() =>
+      calculateTrainingLoad([{ distanceKm: 5, durationMinutes: 0, rpe: 5 }])
+    ).toThrow(RangeError);
+    expect(() =>
+      calculateTrainingLoad([{ distanceKm: 5, durationMinutes: 30, rpe: 0 }])
+    ).toThrow(RangeError);
   });
 });

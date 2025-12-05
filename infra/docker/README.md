@@ -3,10 +3,12 @@
 Local orchestration for developer services.
 
 ## Services
+
 - `redis` – queues and caching (exposed on `localhost:6379`).
 - `supabase-db` (profile `supabase`) – optional Postgres instance mirroring Supabase defaults for applying SQL migrations locally (exposed on `localhost:54322`).
 
 ## Usage
+
 From the repository root:
 
 ```bash

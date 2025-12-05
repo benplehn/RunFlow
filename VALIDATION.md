@@ -5,6 +5,7 @@ Ce document récapitule comment valider que les étapes 1 et 2 sont complètes, 
 ## 🎯 Étape 1 – Socle Monorepo & Outillage
 
 ### Objectif
+
 Le backend doit être capable de compiler et tester de manière reproductible, avec une structure claire et des règles de qualité minimales.
 
 ### Critères de Validation
@@ -12,6 +13,7 @@ Le backend doit être capable de compiler et tester de manière reproductible, a
 #### ✅ Compiler et tester de manière reproductible
 
 **Localement :**
+
 ```bash
 # Installer toutes les dépendances avec une seule commande
 pnpm install
@@ -28,6 +30,7 @@ pnpm test
 #### ✅ Structurer le code selon l'architecture cible
 
 **Vérification de structure :**
+
 ```
 RunFlow/
 ├── apps/
@@ -45,6 +48,7 @@ RunFlow/
 ```
 
 **Localement :**
+
 ```bash
 # Vérifier que tous les répertoires existent
 ls apps/api apps/worker
@@ -56,11 +60,13 @@ ls packages/domain packages/db packages/schemas packages/config packages/telemet
 #### ✅ Imports inter-packages corrects
 
 **Vérification :**
+
 - Les imports utilisent les paths TypeScript (via `tsconfig.base.json`)
 - Pas de chemins relatifs cassés type `../../../../../../`
 - Les packages se référencent via leur nom workspace (`@runflow/*`)
 
 **Localement :**
+
 ```bash
 # Le build ne doit avoir aucune erreur de résolution de module
 pnpm build
@@ -69,6 +75,7 @@ pnpm build
 #### ✅ Garantir des règles de qualité minimales
 
 **Localement :**
+
 ```bash
 # Lancer l'analyse statique
 pnpm lint
@@ -85,11 +92,13 @@ make ci
 ### ✅ Validation Étape 1 Complète
 
 **Commande unique :**
+
 ```bash
 make ci
 ```
 
 Ou manuellement :
+
 ```bash
 pnpm install && pnpm lint && pnpm build && pnpm test:unit
 ```
@@ -101,6 +110,7 @@ pnpm install && pnpm lint && pnpm build && pnpm test:unit
 ## 🎯 Étape 2 – Supabase & Infrastructure de Données
 
 ### Objectif
+
 Le backend doit pouvoir provisionner une base Supabase from scratch, se connecter de façon typée, et vérifier l'état de la DB.
 
 ### Critères de Validation
@@ -108,6 +118,7 @@ Le backend doit pouvoir provisionner une base Supabase from scratch, se connecte
 #### ✅ Provisionner une base de données Supabase "from scratch"
 
 **Localement :**
+
 ```bash
 # 1. Démarrer la stack Supabase locale
 cd infra/docker
@@ -124,6 +135,7 @@ psql "$DATABASE_URL" -c "\dt public.*"
 **Résultat attendu :** 8 tables créées (profiles, training_plans, plan_weeks, plan_sessions, workouts, clubs, club_members, workout_feedback).
 
 **Pour recréer un environnement local propre :**
+
 ```bash
 pnpm db:reset
 ```
@@ -133,15 +145,18 @@ pnpm db:reset
 #### ✅ Connaître ses environnements
 
 **Environnements distincts :**
+
 - **Local dev** : Docker Compose (`localhost:54322`)
 - **Cloud Supabase** : Staging ou prod (URL cloud)
 
 **Configuration :**
+
 - `.env.local` : Local dev
 - `.env.cloud` : Cloud (non commité)
 - `packages/config` : Chargement validé par Zod
 
 **Vérification :**
+
 ```bash
 # Vérifier que packages/config existe et expose la config
 ls packages/config/src/index.ts
@@ -150,12 +165,14 @@ ls packages/config/src/index.ts
 #### ✅ Se connecter à Supabase de façon typée et centralisée
 
 **Vérification :**
+
 ```bash
 # Le package db doit exporter les clients Supabase
 ls packages/db/src/index.ts
 ```
 
 **Clients attendus :**
+
 - Client anon (usage futur côté "user-space")
 - Client service role (usage API/worker, non exposé au client)
 
@@ -164,12 +181,14 @@ ls packages/db/src/index.ts
 #### ✅ Vérifier l'état de la DB
 
 **Localement :**
+
 ```bash
 # Exécuter les tests pgTAP
 pnpm db:test
 ```
 
 **Tests exécutés :**
+
 - `001_extensions.sql` : Vérifier que les extensions (uuid-ossp, pgcrypto, pgtap) sont présentes
 - `002_schema_structure.sql` : Valider la structure (tables, PK, FK, indexes, contraintes)
 - `003_rls_policies.sql` : Vérifier que RLS est activé et que les politiques existent
@@ -182,6 +201,7 @@ pnpm db:test
 ### ✅ Validation Étape 2 Complète
 
 **Commande unique :**
+
 ```bash
 # Démarrer la stack locale
 cd infra/docker && docker compose -f docker-compose.dev.yml up -d && cd ../..
@@ -216,6 +236,7 @@ make ci
 ```
 
 **Résultat attendu :**
+
 - ✅ Lint passe
 - ✅ Build réussit (tous les packages)
 - ✅ Tests unitaires passent
@@ -226,6 +247,7 @@ make ci
 **Déclenchement :** Push ou PR vers `main` ou `develop`
 
 **Jobs exécutés :**
+
 1. ✅ `install-and-cache` - Installation et cache des dépendances
 2. ✅ `lint` - ESLint + Prettier
 3. ✅ `build` - Compilation TypeScript
@@ -239,24 +261,25 @@ make ci
 
 ### Commandes Récapitulatives
 
-| Commande | Description |
-|----------|-------------|
-| `pnpm install` | Installer toutes les dépendances |
-| `pnpm build` | Compiler API + worker + packages |
-| `pnpm lint` | Vérifier qualité du code |
-| `pnpm test` | Lancer tests unitaires |
-| `pnpm test:all` | Tests unitaires + DB |
-| `pnpm db:migrate` | Appliquer migrations |
-| `pnpm db:reset` | Reset DB et ré-appliquer migrations |
-| `pnpm db:test` | Tests pgTAP uniquement |
-| `make ci` | Pipeline CI complet en local |
-| `make help` | Voir toutes les commandes Make |
+| Commande          | Description                         |
+| ----------------- | ----------------------------------- |
+| `pnpm install`    | Installer toutes les dépendances    |
+| `pnpm build`      | Compiler API + worker + packages    |
+| `pnpm lint`       | Vérifier qualité du code            |
+| `pnpm test`       | Lancer tests unitaires              |
+| `pnpm test:all`   | Tests unitaires + DB                |
+| `pnpm db:migrate` | Appliquer migrations                |
+| `pnpm db:reset`   | Reset DB et ré-appliquer migrations |
+| `pnpm db:test`    | Tests pgTAP uniquement              |
+| `make ci`         | Pipeline CI complet en local        |
+| `make help`       | Voir toutes les commandes Make      |
 
 ---
 
 ## ✅ Checklist de Validation
 
 ### Étape 1 - Socle Monorepo
+
 - [ ] `pnpm install` fonctionne sans erreur
 - [ ] `pnpm build` compile tous les packages
 - [ ] `pnpm test` lance les tests unitaires
@@ -265,6 +288,7 @@ make ci
 - [ ] `pnpm format --check` passe
 
 ### Étape 2 - Supabase Infrastructure
+
 - [ ] Stack Docker démarre (`docker compose up`)
 - [ ] `pnpm db:migrate` applique les migrations
 - [ ] `pnpm db:reset` fonctionne
@@ -274,6 +298,7 @@ make ci
 - [ ] Les extensions requises sont installées
 
 ### CI/CD
+
 - [ ] GitHub Actions configuré (`.github/workflows/ci.yml`)
 - [ ] Badge CI ajouté au README
 - [ ] Tous les jobs CI passent au vert

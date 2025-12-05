@@ -1,12 +1,12 @@
-version: "3.9"
+version: '3.9'
 
 services:
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    command: ['redis-server', '--save', '60', '1', '--loglevel', 'warning']
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
 
@@ -14,7 +14,7 @@ services:
     image: supabase/postgres:15.1.1.80
     restart: unless-stopped
     ports:
-      - "54322:5432"
+      - '54322:5432'
     environment:
       POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-postgres}
       POSTGRES_USER: postgres
@@ -34,9 +34,9 @@ services:
       GOTRUE_DB_DATABASE_URL: postgres://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/postgres
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
-      GOTRUE_DISABLE_SIGNUP: "false"
-      GOTRUE_MAILER_AUTOCONFIRM: "true"
-      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_DISABLE_SIGNUP: 'false'
+      GOTRUE_MAILER_AUTOCONFIRM: 'true'
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true'
       GOTRUE_LOG_LEVEL: DEBUG
 
   rest:
@@ -49,7 +49,7 @@ services:
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-dev-jwt-secret}
     ports:
-      - "54321:3000"
+      - '54321:3000'
 
   realtime:
     image: supabase/realtime:v2.25.63
@@ -64,10 +64,10 @@ services:
       PORT: 4000
       JWT_SECRET: ${SUPABASE_JWT_SECRET:-dev-jwt-secret}
     ports:
-      - "54324:4000"
+      - '54324:4000'
 
   storage:
-    image: supabase/storage-api:v1.18.4
+    image: supabase/storage-api:v1.32.1
     depends_on:
       - supabase-db
       - auth
@@ -77,13 +77,13 @@ services:
       POSTGREST_URL: http://rest:3000
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-dev-jwt-secret}
       DATABASE_URL: postgres://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/postgres
-      PGOPTIONS: "-c search_path=storage,public"
+      PGOPTIONS: '-c search_path=storage,public'
       FILE_SIZE_LIMIT: 52428800
     ports:
-      - "54325:5000"
+      - '54325:5000'
 
   studio:
-    image: supabase/studio:20240410-a11371c
+    image: supabase/studio:2025.12.01-sha-4ad48b7
     depends_on:
       - supabase-db
       - rest
@@ -95,7 +95,7 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-dev-service-role-key}
       SUPABASE_PUBLIC_URL: ${SITE_URL:-http://localhost:3000}
     ports:
-      - "54326:3000"
+      - '54326:3000'
 
 volumes:
   redis-data:

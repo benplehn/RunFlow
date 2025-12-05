@@ -55,22 +55,26 @@ make ci
 ### 3. Standards de Qualité
 
 #### Code Style
+
 - Utiliser **Prettier** pour le formatage (automatique via `pnpm format`)
 - Suivre les règles **ESLint** configurées
 - Pas de `console.log` dans le code de production (utiliser `packages/telemetry`)
 
 #### TypeScript
+
 - Mode strict activé
 - Pas de `any` sauf justification explicite
 - Typer toutes les fonctions publiques
 - Utiliser Zod pour la validation runtime
 
 #### Tests
+
 - Tests unitaires pour la logique métier (`packages/domain`)
 - Tests pgTAP pour le schéma de base de données
 - Coverage minimum : à définir par l'équipe
 
 #### Architecture
+
 - Respecter la séparation des packages :
   - `packages/domain` : logique métier pure (aucun I/O)
   - `packages/db` : accès base de données uniquement
@@ -82,6 +86,7 @@ make ci
 ### 4. Pull Requests
 
 #### Avant de créer une PR :
+
 1. ✅ Créer une branche depuis `develop` : `git checkout -b feature/ma-feature`
 2. ✅ Faire vos modifications
 3. ✅ Vérifier que le CI passe localement : `make ci`
@@ -89,6 +94,7 @@ make ci
 5. ✅ Pusher et créer la PR vers `develop`
 
 #### Structure du message de commit :
+
 ```
 type(scope): description courte
 
@@ -100,6 +106,7 @@ Refs: #123
 Types : `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 #### Checklist PR :
+
 - [ ] Le code compile sans erreurs
 - [ ] Les tests passent
 - [ ] Le linting passe
@@ -113,12 +120,14 @@ Types : `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 Notre CI GitHub Actions vérifie automatiquement :
 
 #### Étape 1 - Socle Monorepo
+
 - ✅ Installation des dépendances
 - ✅ Linting (ESLint + Prettier)
 - ✅ Build (TypeScript compilation)
 - ✅ Tests unitaires (Vitest)
 
 #### Étape 2 - Infrastructure Supabase
+
 - ✅ Provisionnement PostgreSQL
 - ✅ Migrations de schéma
 - ✅ Tests pgTAP (extensions, schéma, RLS, fonctions)
@@ -147,12 +156,14 @@ pnpm db:test
 ```
 
 #### Règles pour les migrations :
+
 - ✅ Idempotentes (utiliser `IF NOT EXISTS`, `IF EXISTS`)
 - ✅ Réversibles si possible (ou documenter la procédure de rollback)
 - ✅ Testées avec pgTAP
 - ✅ Ne jamais modifier une migration déjà mergée (créer une nouvelle)
 
 #### Tests pgTAP requis :
+
 - Vérifier l'existence des tables
 - Vérifier les clés primaires/étrangères
 - Vérifier les index
@@ -163,6 +174,7 @@ pnpm db:test
 ### 7. Troubleshooting
 
 #### Le build échoue :
+
 ```bash
 # Nettoyer et rebuilder
 pnpm clean
@@ -171,6 +183,7 @@ pnpm build
 ```
 
 #### Les tests DB échouent :
+
 ```bash
 # Reset complet de la base
 pnpm db:reset
@@ -183,6 +196,7 @@ pnpm db:test
 ```
 
 #### Problème SSL avec Supabase local :
+
 ```bash
 # Vérifier que PGSSLMODE est désactivé
 export PGSSLMODE=disable
@@ -202,6 +216,7 @@ DATABASE_URL="postgres://postgres:postgres@localhost:54322/postgres?sslmode=disa
 ### 9. Aide
 
 Si vous rencontrez un problème :
+
 1. Vérifier les [Issues existantes](../../issues)
 2. Consulter la documentation
 3. Demander dans le canal Slack de l'équipe

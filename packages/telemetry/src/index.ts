@@ -4,6 +4,8 @@ export interface TelemetryEvent {
 }
 
 export function logPlaceholderEvent(event: TelemetryEvent): string {
-  const properties = event.properties ? JSON.stringify(event.properties) : 'no properties';
+  const properties = event.properties
+    ? JSON.stringify(event.properties)
+    : 'no properties';
   return `Telemetry event: ${event.name} (${properties})`;
 }

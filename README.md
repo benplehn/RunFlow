@@ -5,11 +5,13 @@
 Backend-for-frontend focused monorepo for RunFlow, providing API and worker apps with shared packages.
 
 ## Structure
+
 - `apps/` – Fastify BFF (`api`) and BullMQ worker (`worker`).
 - `packages/` – Domain logic, database access, schemas, configuration, telemetry, and integration services.
 - `infra/` – Infrastructure assets such as Supabase migrations and Docker Compose definitions.
 
 ## Tooling
+
 - **pnpm** for workspace management
 - **Turborepo** for task orchestration
 - **TypeScript** across all packages
@@ -17,6 +19,7 @@ Backend-for-frontend focused monorepo for RunFlow, providing API and worker apps
 - **Vitest** for testing
 
 ### Common commands
+
 Run from the repository root:
 
 - `pnpm dev` – starts development servers for all apps
@@ -25,6 +28,7 @@ Run from the repository root:
 - `pnpm format` – format code with Prettier
 
 #### Testing
+
 - `pnpm test` or `pnpm test:unit` – runs unit tests (Vitest) across all packages
 - `pnpm test:db` – runs database tests (pgTAP) against local Postgres
 - `pnpm test:all` – runs both unit and database tests (recommended before commits)
@@ -32,6 +36,7 @@ Run from the repository root:
 - `pnpm test:coverage` – generates coverage reports
 
 #### Database Management
+
 - `pnpm db:migrate` – applies migrations to the database specified by `DATABASE_URL`
 - `pnpm db:reset` – resets database and reapplies all migrations (local only)
 - `pnpm db:test` – runs pgTAP database tests
@@ -39,6 +44,7 @@ Run from the repository root:
 > Each package exposes `build`, `lint`, and `test` scripts so the orchestrator remains simple and predictable.
 
 ## Supabase & local services
+
 - Define environment variables in `.env` (see `.env.example`).
 - Supabase migrations live in `infra/supabase/migrations` and are applied via the Supabase CLI (`supabase db push --workdir infra/supabase`).
 - Local dependencies are orchestrated with Docker Compose in `infra/docker` (Redis by default; optional Supabase Postgres profile for offline migration testing).
@@ -52,6 +58,7 @@ The project uses GitHub Actions for continuous integration. The CI pipeline vali
 ### Étape 1 - Socle Monorepo & Outillage ✅
 
 The CI verifies that the backend can:
+
 - ✅ **Compile and test reproducibly**
   - Install all dependencies: `pnpm install`
   - Build API + worker + packages: `pnpm build`
@@ -66,6 +73,7 @@ The CI verifies that the backend can:
 ### Étape 2 - Supabase & Infrastructure ✅
 
 The CI verifies that the backend can:
+
 - ✅ **Provision Supabase from scratch**
   - Create empty but compliant database: `pnpm db:migrate`
   - Recreate clean local environment: `pnpm db:reset`

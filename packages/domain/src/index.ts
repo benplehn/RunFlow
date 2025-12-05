@@ -14,7 +14,12 @@ export interface TrainingLoadBreakdown {
 
 export const domainPlaceholder = {
   description: 'Core business logic for training plans will live here.',
-  supportedCategories: ['5k', '10k', 'half-marathon', 'marathon'] as TrainingCategory[]
+  supportedCategories: [
+    '5k',
+    '10k',
+    'half-marathon',
+    'marathon'
+  ] as TrainingCategory[]
 };
 
 /**
@@ -28,7 +33,9 @@ export const domainPlaceholder = {
  * - Input validation stays narrow: negative values or zero-duration sessions are
  *   rejected early so downstream aggregates are not silently wrong.
  */
-export function calculateTrainingLoad(sessions: TrainingSessionInput[]): TrainingLoadBreakdown {
+export function calculateTrainingLoad(
+  sessions: TrainingSessionInput[]
+): TrainingLoadBreakdown {
   if (!Array.isArray(sessions)) {
     throw new TypeError('sessions must be an array');
   }
@@ -42,7 +49,11 @@ export function calculateTrainingLoad(sessions: TrainingSessionInput[]): Trainin
   let totalDurationMinutes = 0;
 
   for (const session of sessions) {
-    if (session.distanceKm < 0 || session.durationMinutes <= 0 || session.rpe <= 0) {
+    if (
+      session.distanceKm < 0 ||
+      session.durationMinutes <= 0 ||
+      session.rpe <= 0
+    ) {
       throw new RangeError('session values must be positive');
     }
 

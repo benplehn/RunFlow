@@ -3,15 +3,18 @@
 Tout ce qui concerne Supabase (migrations SQL, config CLI, tests pgTAP) vit ici.
 
 ## Contenu
+
 - `config.toml` – config Supabase CLI (ports, project ref, redirects).
 - `migrations/` – migrations SQL versionnées pour local et cloud.
 - `tests/` – tests pgTAP exécutés avec `supabase test`.
 
 ## Deux modes d’environnement
+
 - **Local (Docker)** : stack Supabase complète (Postgres, auth, REST, Realtime, Storage, Studio) via `infra/docker/docker-compose.dev.yml`. Ports par défaut : Postgres `54322`, REST `54321`, Studio `54326`.
 - **Cloud** : projet Supabase managé. On y pousse les mêmes migrations via le CLI.
 
 ## Démarrer en local (recommandé pour coder vite)
+
 1. Préparer `.env.local` avec au minimum :
    - `DATABASE_URL=postgres://postgres:postgres@localhost:54322/postgres` (pas de SSL en local)
    - `SUPABASE_URL=http://localhost:54321`
@@ -36,6 +39,7 @@ Tout ce qui concerne Supabase (migrations SQL, config CLI, tests pgTAP) vit ici.
    - psql : `psql "$DATABASE_URL"` puis `\dt`
 
 ## Pousser sur le cloud (prod/staging)
+
 1. Installer le CLI et se loguer : `supabase login`.
 2. Lier le projet :
    ```bash
@@ -52,6 +56,7 @@ Tout ce qui concerne Supabase (migrations SQL, config CLI, tests pgTAP) vit ici.
    (SSL obligatoire en production)
 
 ## Commandes utiles (que fait chacune ?)
+
 - `pnpm db:migrate` : pousse les migrations SQL de `infra/supabase/migrations` vers la base ciblée par `DATABASE_URL`.
 - `pnpm db:reset` : drop la base cible puis rejoue toutes les migrations (pratique pour repartir de zéro en local).
 - `pnpm db:test` : exécute les tests pgTAP de `infra/supabase/tests` sur la base cible (gère SSL automatiquement).
@@ -69,6 +74,7 @@ Tout ce qui concerne Supabase (migrations SQL, config CLI, tests pgTAP) vit ici.
 RunFlow utilise pgTAP pour tester la base de données. Les tests vérifient la structure du schéma, les politiques RLS, les fonctions et les contraintes.
 
 #### Démarrage Rapide
+
 ```bash
 # Exécuter tous les tests de base de données
 pnpm db:test
@@ -78,6 +84,7 @@ pnpm test:all
 ```
 
 #### Organisation des Tests
+
 - `tests/001_extensions.sql` - Vérifier les extensions PostgreSQL requises
 - `tests/002_schema_structure.sql` - Valider les schémas de tables, index et contraintes
 - `tests/003_rls_policies.sql` - Tester les politiques Row Level Security
@@ -100,6 +107,7 @@ ROLLBACK; -- Garde la base de données propre
 ```
 
 **Fonctions Clés :**
+
 - `has_table(schema, table, description)` - Tester l'existence de la table
 - `has_column(schema, table, column, description)` - Tester l'existence de la colonne
 - `has_pk(schema, table, description)` - Tester la clé primaire
@@ -112,22 +120,26 @@ Voir [documentation pgTAP](https://pgtap.org/documentation.html) pour plus.
 #### Dépannage
 
 **Problème :** Erreur de connexion SSL
+
 ```
 ERROR: connection to server failed: SSL required
 ```
 
 **Solution :** Le script `pnpm db:test` définit déjà `PGSSLMODE=disable` pour le développement local. Si vous exécutez des commandes supabase directement, définissez-le manuellement :
+
 ```bash
 export PGSSLMODE=disable
 supabase test db --db-url "$DATABASE_URL" --workdir infra/supabase
 ```
 
 Ou utilisez `DATABASE_URL` avec sslmode dans la chaîne de connexion :
+
 ```env
 DATABASE_URL=postgres://postgres:postgres@localhost:54322/postgres?sslmode=disable
 ```
 
 **Problème :** Extension pgTAP non trouvée
+
 ```
 ERROR: extension "pgtap" does not exist
 ```
@@ -139,6 +151,7 @@ ERROR: extension "pgtap" does not exist
 ### Workflow de Test Complet
 
 #### Développement Local
+
 ```bash
 # 1. Démarrer les services
 cd infra/docker
@@ -159,6 +172,7 @@ pnpm test:all
 ```
 
 #### Pipeline CI/CD
+
 ```bash
 # Installer les dépendances
 pnpm install
