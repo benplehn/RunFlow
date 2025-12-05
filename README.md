@@ -21,8 +21,7 @@ Run from the repository root:
 - `pnpm test` – executes unit tests (Vitest) across packages; uses `passWithNoTests` to avoid false negatives while scaffolding.
 - `pnpm build` – type-checks and builds packages/apps in dependency order through Turborepo.
 
-> Turborepo now uses a `tasks` block (not the old `pipeline`). Each package exposes `build`, `lint`, and `test` scripts so the
-> orchestrator remains simple and predictable.
+> Each package exposes `build`, `lint`, and `test` scripts so the orchestrator remains simple and predictable.
 
 ## Supabase & local services
 - Define environment variables in `.env` (see `.env.example`).
