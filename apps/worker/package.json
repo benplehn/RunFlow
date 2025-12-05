@@ -1,0 +1,11 @@
+{
+  "name": "@runflow/worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Starting worker placeholder...\"",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint --ext .ts src",
+    "test": "vitest"
+  }
+}
