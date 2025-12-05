@@ -1,16 +1,3 @@
--- Base schema for RunFlow
--- Extensions
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
-
--- Timestamp trigger helper
-create or replace function public.set_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = timezone('utc', now());
-  return new;
-end;
-$$ language plpgsql;
 
 -- Profiles mirror auth.users
 create table if not exists public.profiles (
@@ -27,6 +14,7 @@ before update on public.profiles
 for each row execute procedure public.set_updated_at();
 
 -- Training plans (high level)
+-- A plan belongs to a single user; the application enforces one "active" plan at a time.
 create table if not exists public.training_plans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -78,6 +66,7 @@ create unique index if not exists plan_sessions_unique_idx
   on public.plan_sessions (training_plan_id, session_index);
 
 -- Actual workouts logged by the athlete
+-- plan_session_id is nullable because athletes may free-train without a plan.
 create table if not exists public.workouts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -96,6 +85,7 @@ create table if not exists public.workouts (
 create index if not exists workouts_user_id_idx on public.workouts (user_id);
 
 -- Clubs (clans)
+-- We store privacy at the club row level so RLS can filter without joins for public data.
 create table if not exists public.clubs (
   id uuid primary key default gen_random_uuid(),
   created_by uuid references auth.users (id) on delete set null,
@@ -127,6 +117,7 @@ create table if not exists public.workout_feedback (
 );
 
 -- Security: enable RLS
+-- RLS is the primary guardrail; service role connections are reserved for workers/cron.
 alter table public.profiles enable row level security;
 alter table public.training_plans enable row level security;
 alter table public.plan_weeks enable row level security;
@@ -229,6 +220,8 @@ create policy "Club admins manage clubs" on public.clubs
   );
 
 -- Club members policies
+-- NOTE: we do not enforce "at least one owner" here to keep the policy small; the
+-- application/worker layer should prevent orphaned clubs when demoting/removing users.
 create policy "Members can view membership" on public.club_members
   for select using (
     exists (

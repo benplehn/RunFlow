@@ -8,13 +8,21 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:migrate": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db push --workdir infra/supabase --db-url \"$DB_URL\"",
+    "db:reset": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db reset --workdir infra/supabase --db-url \"$DB_URL\"",
+    "db:test": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres?sslmode=disable}\"; for test in infra/supabase/tests/*.sql; do echo \"Running $test...\"; psql \"$DB_URL\" -f \"$test\" || exit 1; done; echo \"\\n✓ All database tests passed!\"",
+    "test:unit": "turbo test",
+    "test:db": "pnpm db:test",
+    "test:all": "pnpm test:unit && pnpm test:db",
+    "test:coverage": "turbo test -- --coverage",
+    "test:watch": "turbo test -- --watch"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
-    "eslint": "^9.12.0",
+    "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",
     "turbo": "^2.2.3",

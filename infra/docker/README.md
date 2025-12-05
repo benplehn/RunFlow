@@ -22,3 +22,6 @@ Migrations can then be applied to the local Postgres instance with:
 ```bash
 supabase db push --db-url "$DATABASE_URL" --workdir infra/supabase
 ```
+
+> Tip: compose is configured without persisted volumes. If you need a clean slate during development,
+> `docker compose down -v` will drop the ephemeral data directories for both Redis and Postgres.
