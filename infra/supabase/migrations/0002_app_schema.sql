@@ -1,18 +1,3 @@
--- Base schema for RunFlow
--- Keep this migration intentionally verbose and documented so teammates can audit
--- changes when RLS blocks a query in production.
--- Extensions
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
-
--- Timestamp trigger helper
-create or replace function public.set_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = timezone('utc', now());
-  return new;
-end;
-$$ language plpgsql;
 
 -- Profiles mirror auth.users
 create table if not exists public.profiles (

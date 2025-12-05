@@ -8,7 +8,9 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:migrate": "supabase db push --workdir infra/supabase --db-url \"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"",
+    "db:reset": "supabase db reset --workdir infra/supabase --db-url \"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\""
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
