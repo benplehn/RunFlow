@@ -19,7 +19,14 @@ export const domainPlaceholder = {
 
 /**
  * Simple training load calculator to support early feature tests.
- * Load = sum(distanceKm * rpe). Average RPE is duration-weighted to better reflect long efforts.
+ *
+ * Rationale:
+ * - We keep the formula intentionally transparent (distance * RPE) to match early
+ *   RunFlow screens and to make debugging easy for coaches.
+ * - Average RPE is duration-weighted so a 30min jog does not skew the perception
+ *   of a 2h long run that happened the same week.
+ * - Input validation stays narrow: negative values or zero-duration sessions are
+ *   rejected early so downstream aggregates are not silently wrong.
  */
 export function calculateTrainingLoad(sessions: TrainingSessionInput[]): TrainingLoadBreakdown {
   if (!Array.isArray(sessions)) {
