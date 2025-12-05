@@ -14,4 +14,9 @@ Backend-for-frontend focused monorepo for RunFlow, providing API and worker apps
 - **ESLint** + **Prettier** for formatting and linting
 - **Vitest** for testing
 
+## Supabase & local services
+- Define environment variables in `.env` (see `.env.example`).
+- Supabase migrations live in `infra/supabase/migrations` and are applied via the Supabase CLI (`supabase db push --workdir infra/supabase`).
+- Local dependencies are orchestrated with Docker Compose in `infra/docker` (Redis by default; optional Supabase Postgres profile for offline migration testing).
+
 Use `pnpm` scripts at the repository root to run tasks across the workspace once Node and pnpm are available.
