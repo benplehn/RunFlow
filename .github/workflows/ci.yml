@@ -153,6 +153,10 @@ jobs:
       - name: Apply database migrations
         run: pnpm db:migrate
 
+      - name: Reload schema cache
+        run: |
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema'"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -309,6 +313,10 @@ jobs:
 
       - name: Apply database migrations
         run: pnpm db:migrate
+
+      - name: Reload schema cache
+        run: |
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema'"
 
       - name: Build @runflow/db
         run: pnpm --filter @runflow/db build
