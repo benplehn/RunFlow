@@ -431,6 +431,9 @@ jobs:
           docker logs $(docker ps -q --filter name=rest)
           exit 1
 
+      - name: Build @runflow/config
+        run: pnpm --filter @runflow/config build
+
       - name: Build @runflow/db
         run: pnpm --filter @runflow/db build
 
