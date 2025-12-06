@@ -13,8 +13,8 @@ import type { ApiConfig } from './config';
 export async function createServer(config: ApiConfig): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: {
-      level: config.logging.level,
-      ...(config.logging.pretty && {
+      level: config.logLevel,
+      ...(config.nodeEnv !== 'production' && {
         transport: {
           target: 'pino-pretty',
           options: {

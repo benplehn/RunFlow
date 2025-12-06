@@ -1,13 +1,48 @@
-export interface EnvConfig {
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-}
+import { z } from 'zod';
+import dotenv from 'dotenv';
+import { join } from 'path';
 
-export function buildConfig(env: Partial<EnvConfig>): EnvConfig {
-  // Defaults are placeholders to keep library consumers from crashing in tests or storybooks.
-  // Runtime environments (API/worker) should override them via real environment variables.
-  return {
-    supabaseUrl: env.supabaseUrl ?? 'https://example.supabase.co',
-    supabaseAnonKey: env.supabaseAnonKey ?? 'supabase-anon-key'
-  };
+// Load .env.local from monorepo root
+dotenv.config({ path: join(__dirname, '../../../.env.local') });
+
+/**
+ * Validated schema for environment variables using Zod.
+ * Allows safe parsing and typing of process.env.
+ */
+export const configSchema = z.object({
+  nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
+  port: z.coerce.number().default(4000),
+  logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  supabase: z.object({
+    url: z.string().url({ message: "SUPABASE_URL must be a valid URL" }),
+    anonKey: z.string().min(1, { message: "SUPABASE_ANON_KEY is required" }),
+    serviceRoleKey: z.string().min(1, { message: "SUPABASE_SERVICE_ROLE_KEY is required" }),
+  }),
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+/**
+ * Loads and validates configuration from environment variables.
+ * @throws {Error} If validation fails (missing or invalid vars).
+ * @returns {Config} Validated configuration object.
+ */
+export function loadConfig(): Config {
+  const result = configSchema.safeParse({
+    nodeEnv: process.env.NODE_ENV,
+    port: process.env.PORT,
+    logLevel: process.env.LOG_LEVEL,
+    supabase: {
+      url: process.env.SUPABASE_URL,
+      anonKey: process.env.SUPABASE_ANON_KEY,
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+  });
+
+  if (!result.success) {
+    const errorMessages = result.error.issues.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`).join('\n');
+    throw new Error(`Invalid configuration:\n${errorMessages}`);
+  }
+
+  return result.data;
 }

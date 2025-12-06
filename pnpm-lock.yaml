@@ -44,6 +44,9 @@ importers:
       '@fastify/cors':
         specifier: ^11.1.0
         version: 11.1.0
+      '@runflow/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@runflow/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -66,7 +69,14 @@ importers:
 
   apps/worker: {}
 
-  packages/config: {}
+  packages/config:
+    dependencies:
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      zod:
+        specifier: ^4.1.13
+        version: 4.1.13
 
   packages/db:
     dependencies:
@@ -1647,6 +1657,9 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod@4.1.13:
+    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
+
 snapshots:
 
   '@ampproject/remapping@2.3.0':
@@ -3111,3 +3124,5 @@ snapshots:
   ws@8.18.3: {}
 
   yocto-queue@0.1.0: {}
+
+  zod@4.1.13: {}

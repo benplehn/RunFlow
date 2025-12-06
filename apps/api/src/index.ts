@@ -1,15 +1,9 @@
 import { createServer } from './server';
-import { loadConfig, validateConfig } from './config';
+import { loadConfig } from './config';
 
 async function start() {
   const config = loadConfig();
 
-  try {
-    validateConfig(config);
-  } catch (error) {
-    console.error('Configuration error:', error);
-    process.exit(1);
-  }
 
   const server = await createServer(config);
 

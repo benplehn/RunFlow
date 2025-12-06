@@ -152,13 +152,13 @@ pnpm db:reset
 **Configuration :**
 
 - `.env.local` : Local dev
-- `.env.cloud` : Cloud (non commité)
-- `packages/config` : Chargement validé par Zod
+- `.env.cloud` : Cloud (non commité, injecté par CI/CD)
+- `packages/config` : Chargement typé et validé par Zod Schema
 
 **Vérification :**
 
 ```bash
-# Vérifier que packages/config existe et expose la config
+# Vérifier que packages/config existe et expose la config via Zod
 ls packages/config/src/index.ts
 ```
 

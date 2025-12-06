@@ -13,6 +13,7 @@
   "dependencies": {
     "@fastify/cors": "^11.1.0",
     "@runflow/db": "workspace:*",
+    "@runflow/config": "workspace:*",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.2"
   },
