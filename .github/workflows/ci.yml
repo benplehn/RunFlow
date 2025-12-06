@@ -150,8 +150,21 @@ jobs:
             sleep 3
           done
 
-      - name: Apply database migrations
-        run: pnpm db:reset
+      - name: Apply migrations manually (Robust)
+        run: |
+          echo "Applying migrations manually via psql..."
+          # Apply all migration files in order
+          for file in infra/supabase/migrations/*.sql; do
+            [ -e "$file" ] || continue
+            echo "Applying $file..."
+            PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f "$file"
+          done
+
+          # Apply seed if exists
+          if [ -f infra/supabase/seed.sql ]; then
+             echo "Applying seed.sql..."
+             PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f infra/supabase/seed.sql
+          fi
 
       - name: Verify Tables (psql)
         run: |
@@ -274,8 +287,21 @@ jobs:
         run: |
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
 
-      - name: Apply database migrations
-        run: pnpm db:reset
+      - name: Apply migrations manually (Robust)
+        run: |
+          echo "Applying migrations manually via psql..."
+          # Apply all migration files in order
+          for file in infra/supabase/migrations/*.sql; do
+            [ -e "$file" ] || continue
+            echo "Applying $file..."
+            PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f "$file"
+          done
+
+          # Apply seed if exists
+          if [ -f infra/supabase/seed.sql ]; then
+             echo "Applying seed.sql..."
+             PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f infra/supabase/seed.sql
+          fi
 
       - name: Verify database connectivity
         run: |
@@ -348,8 +374,21 @@ jobs:
             sleep 3
           done
 
-      - name: Apply database migrations
-        run: pnpm db:reset
+      - name: Apply migrations manually (Robust)
+        run: |
+          echo "Applying migrations manually via psql..."
+          # Apply all migration files in order
+          for file in infra/supabase/migrations/*.sql; do
+            [ -e "$file" ] || continue
+            echo "Applying $file..."
+            PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f "$file"
+          done
+
+          # Apply seed if exists
+          if [ -f infra/supabase/seed.sql ]; then
+             echo "Applying seed.sql..."
+             PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f infra/supabase/seed.sql
+          fi
 
       - name: Verify Tables (psql)
         run: |
