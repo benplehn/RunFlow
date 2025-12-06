@@ -139,11 +139,12 @@ jobs:
       - name: Start Supabase stack (local)
         run: |
           supabase start --workdir infra/supabase
-          KEYS_FILE="infra/supabase/.temp/keys.json"
-          echo "SUPABASE_URL=http://localhost:54321" >> $GITHUB_ENV
-          echo "SUPABASE_ANON_KEY=$(jq -r '.anon_key' $KEYS_FILE)" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.service_role_key' $KEYS_FILE)" >> $GITHUB_ENV
-          echo "SUPABASE_JWT_SECRET=$(jq -r '.jwt_secret' $KEYS_FILE)" >> $GITHUB_ENV
+          # Export runtime keys directly from Supabase status (CLI v2.65+)
+          STATUS_JSON="$(supabase status --workdir infra/supabase -o json | sed -n '/^{/,$p')"
+          echo "SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL')" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.ANON_KEY')" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
+          echo "SUPABASE_JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
           until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do
             echo "Waiting for Supabase REST..."
             sleep 3
@@ -294,12 +295,12 @@ jobs:
       - name: Start Supabase stack (local)
         run: |
           supabase start --workdir infra/supabase
-          # Export generated keys for the tests
-          KEYS_FILE="infra/supabase/.temp/keys.json"
-          echo "SUPABASE_URL=http://localhost:54321" >> $GITHUB_ENV
-          echo "SUPABASE_ANON_KEY=$(jq -r '.anon_key' $KEYS_FILE)" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.service_role_key' $KEYS_FILE)" >> $GITHUB_ENV
-          echo "SUPABASE_JWT_SECRET=$(jq -r '.jwt_secret' $KEYS_FILE)" >> $GITHUB_ENV
+          # Export runtime keys directly from Supabase status (CLI v2.65+)
+          STATUS_JSON="$(supabase status --workdir infra/supabase -o json | sed -n '/^{/,$p')"
+          echo "SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL')" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.ANON_KEY')" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
+          echo "SUPABASE_JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
           # Wait for REST API to be ready
           until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do
             echo "Waiting for Supabase REST..."
