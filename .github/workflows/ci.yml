@@ -151,7 +151,7 @@ jobs:
           done
 
       - name: Apply database migrations
-        run: pnpm db:migrate
+        run: pnpm db:reset
 
       - name: Reload schema cache
         run: |
@@ -247,7 +247,7 @@ jobs:
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
 
       - name: Apply database migrations
-        run: pnpm db:migrate
+        run: pnpm db:reset
 
       - name: Verify database connectivity
         run: |
