@@ -1,10 +1,16 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { createServer } from '../server';
 import { loadConfig } from '../config';
+import { ensureSupabaseEnv } from './test-utils';
 
 describe('Server Initialization', () => {
   let server: FastifyInstance | null = null;
+
+  // Provide sensible defaults for local/CI runs without a real Supabase env file.
+  beforeAll(() => {
+    ensureSupabaseEnv();
+  });
 
   afterEach(async () => {
     if (server) {

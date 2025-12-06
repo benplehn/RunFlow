@@ -3,11 +3,15 @@ import type { FastifyInstance } from 'fastify';
 import { createServer } from '../server';
 import { loadConfig } from '../config';
 import type { HealthResponse, DbHealthResponse } from '../types';
+import { ensureSupabaseEnv } from './test-utils';
 
 describe('Health Routes', () => {
   let server: FastifyInstance;
 
   beforeAll(async () => {
+    // Ensure Supabase env is defined for tests/CI (real keys if available)
+    ensureSupabaseEnv();
+
     const config = loadConfig();
     server = await createServer(config);
     await server.ready();
@@ -33,25 +37,16 @@ describe('Health Routes', () => {
   });
 
   describe('GET /health/db', () => {
-    it('returns proper status based on database availability', async () => {
+    it('returns 200 when database is reachable', async () => {
       const response = await server.inject({
         method: 'GET',
         url: '/health/db',
       });
 
       const body = JSON.parse(response.body) as DbHealthResponse;
-
-      // Accept both 200 (DB up) or 503 (DB down) as valid responses
-      expect([200, 503]).toContain(response.statusCode);
-
-      if (response.statusCode === 200) {
-        expect(body.status).toBe('ok');
-        expect(body.database?.connected).toBe(true);
-      } else {
-        expect(body.status).toBe('error');
-        expect(body.database?.connected).toBe(false);
-      }
-
+      expect(response.statusCode).toBe(200);
+      expect(body.status).toBe('ok');
+      expect(body.database?.connected).toBe(true);
       expect(body.timestamp).toBeDefined();
     });
 

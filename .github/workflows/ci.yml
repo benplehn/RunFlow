@@ -240,27 +240,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
 
-    services:
-      postgres:
-        image: supabase/postgres:15.1.1.80
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 54322:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:54322/postgres?sslmode=disable
       PGSSLMODE: disable
-      SUPABASE_URL: http://localhost:54321
-      SUPABASE_ANON_KEY: test-anon-key
-      SUPABASE_SERVICE_ROLE_KEY: test-service-key
 
     steps:
       - name: Checkout code
@@ -285,16 +267,20 @@ jobs:
           curl -fsSL https://github.com/supabase/cli/releases/download/v2.65.5/supabase_linux_amd64.tar.gz | tar -xz
           sudo mv supabase /usr/local/bin/
 
-      - name: Wait for PostgreSQL to be ready
+      - name: Start Supabase stack (local)
         run: |
-          until pg_isready -h localhost -p 54322 -U postgres; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
+          supabase start --workdir infra/supabase
+          # Export generated keys for the tests
+          KEYS_FILE="infra/supabase/.temp/keys.json"
+          echo "SUPABASE_URL=http://localhost:54321" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=$(jq -r '.anon_key' $KEYS_FILE)" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.service_role_key' $KEYS_FILE)" >> $GITHUB_ENV
+          echo "SUPABASE_JWT_SECRET=$(jq -r '.jwt_secret' $KEYS_FILE)" >> $GITHUB_ENV
+          # Wait for REST API to be ready
+          until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do
+            echo "Waiting for Supabase REST..."
+            sleep 3
           done
-
-      - name: Enable pgTAP extension
-        run: |
-          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
 
       - name: Apply database migrations
         run: pnpm db:migrate

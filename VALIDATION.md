@@ -1,6 +1,6 @@
-# Validation des Étapes 1 & 2
+# Validation des Étapes 1, 2 & 3
 
-Ce document récapitule comment valider que les étapes 1 et 2 sont complètes, tant localement qu'en CI.
+Ce document récapitule comment valider les étapes 1, 2 et 3, localement et en CI.
 
 ## 🎯 Étape 1 – Socle Monorepo & Outillage
 
@@ -338,7 +338,7 @@ pnpm --filter @runflow/api dev
 - ✅ CORS configuré (permissif en dev, restrictif en prod)
 - ✅ Graceful shutdown sur SIGINT/SIGTERM
 
-**En CI :** Le job `test-api` démarre le serveur et vérifie qu'il répond.
+**En CI :** Le job `test-api` démarre une stack Supabase locale (`supabase start --workdir infra/supabase`), applique les migrations, construit l'API et lance les tests Vitest.
 
 #### ✅ Répondre à un healthcheck simple
 
@@ -369,17 +369,20 @@ Le test vérifie :
 - ✅ Body contient `status: "ok"`
 - ✅ Timestamp valide
 
-**En CI :** Le job `test-api` exécute les tests automatiquement.
+**En CI :** Le job `test-api` exécute les tests Vitest de l'API.
 
 #### ✅ Vérifier la connectivité à la base
 
 **Localement :**
 
 ```bash
-# 1. Démarrer Supabase (si pas déjà fait)
-supabase start --workdir infra/supabase
+# 1. Démarrer Supabase (stack locale complète)
+pnpm supabase:start
 
-# 2. Vérifier le health check DB
+# 2. Appliquer les migrations
+PGSSLMODE=disable pnpm db:migrate
+
+# 3. Vérifier le health check DB (API lancée via pnpm dev:api)
 curl http://localhost:4000/health/db
 ```
 
@@ -410,11 +413,15 @@ curl http://localhost:4000/health/db
 
 **Tests :**
 
-Les tests vérifient les deux scénarios :
-- ✅ DB up → 200 avec `connected: true`
-- ✅ DB down → 503 avec `connected: false` (mocké)
+```bash
+pnpm --filter @runflow/api test
+```
 
-**En CI :** Le job `test-api` lance Supabase avant de tester la route.
+Les tests exigent :
+- ✅ DB up → 200 avec `connected: true`
+- ✅ DB down (mock) → 503 avec `connected: false`
+
+**En CI :** Le job `test-api` démarre Supabase, attend le REST à `http://localhost:54321`, applique les migrations, puis lance les tests Vitest (200 attendu pour `/health/db` quand la stack est up).
 
 #### ✅ Être intégrable dans un pipeline CI
 
@@ -502,14 +509,19 @@ SUPABASE_SERVICE_ROLE_KEY is required
 
 ```bash
 # Tout tester localement
-make test-api
+pnpm supabase:start
+PGSSLMODE=disable pnpm db:migrate
+pnpm --filter @runflow/db build
+pnpm --filter @runflow/api build
+pnpm --filter @runflow/db test
+pnpm --filter @runflow/api test
 ```
 
 Ou manuellement :
 
 ```bash
 # 1. Démarrer Supabase
-supabase start --workdir infra/supabase
+pnpm supabase:start
 
 # 2. Build les packages
 pnpm --filter @runflow/db build
@@ -529,9 +541,7 @@ curl http://localhost:4000/health/db
 **Résultat attendu :**
 
 - ✅ `@runflow/db` : 8 tests passent
-- ✅ `@runflow/api` : 5 tests passent
-- ✅ `/health` retourne 200 OK
-- ✅ `/health/db` retourne 200 OK (avec Supabase up)
+- ✅ `@runflow/api` : 5 tests passent (dont `/health` et `/health/db` en 200 avec Supabase up)
 - ✅ Build réussit sans erreurs
 - ✅ Lint passe
 - ✅ Hot-reload fonctionne en dev
@@ -549,10 +559,10 @@ curl http://localhost:4000/health/db
 pnpm install
 
 # 2. Démarrer Supabase
-supabase start --workdir infra/supabase
+pnpm supabase:start
 
 # 3. Appliquer migrations
-pnpm db:migrate
+PGSSLMODE=disable pnpm db:migrate
 
 # 4. Lancer le pipeline CI complet
 make ci
@@ -597,8 +607,9 @@ make ci
 | `pnpm lint`                      | Vérifier qualité du code               |
 | `pnpm test`                      | Lancer tests unitaires                 |
 | `pnpm test:all`                  | Tests unitaires + DB                   |
-| `pnpm --filter @runflow/api dev` | Lancer l'API avec hot-reload           |
-| `pnpm db:migrate`                | Appliquer migrations                   |
+| `pnpm dev:api`                   | Lancer l'API avec hot-reload           |
+| `pnpm supabase:start`            | Démarrer la stack Supabase locale      |
+| `PGSSLMODE=disable pnpm db:migrate` | Appliquer migrations sur la DB locale |
 | `pnpm db:reset`                  | Reset DB et ré-appliquer migrations    |
 | `pnpm db:test`                   | Tests pgTAP uniquement                 |
 | `make ci`                        | Pipeline CI complet en local           |

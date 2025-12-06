@@ -40,13 +40,13 @@ LOG_LEVEL=debug
 
 ```bash
 # Depuis la racine du monorepo
-supabase start --workdir infra/supabase
+pnpm supabase:start   # alias de supabase start --workdir infra/supabase
 ```
 
 ### 3. Lancer l'API en développement
 
 ```bash
-pnpm dev
+pnpm dev:api
 ```
 
 L'API sera accessible sur `http://localhost:4000`
@@ -198,6 +198,10 @@ SUPABASE_SERVICE_ROLE_KEY is required
 ```bash
 pnpm test
 ```
+
+Les tests couvrent :
+- ✅ Routes `/health` et `/health/db` (200 OK attendu quand Supabase est joignable)
+- ✅ Comportement d'échec `/health/db` (503 quand la requête DB échoue)
 
 ### Tests en watch mode
 
