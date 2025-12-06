@@ -1,186 +1,31 @@
-# @runflow/db
+# 🗄️ RunFlow Database Package
 
-Package de connexion à Supabase pour RunFlow. Fournit des clients Supabase singleton avec gestion des permissions RLS.
+> **Shared database client configuration and types.**
 
-## 📦 Installation
+This package provides a centralized way to connect to Supabase/Postgres. It is used by both the `@runflow/api` and `@runflow/worker`.
 
-```bash
-pnpm install
-```
+## 🧠 Key Concepts
 
-## 🎯 Objectif
+### 1. Singleton Pattern
+Database connections are expensive to create. This package uses the **Singleton Pattern** to ensure we only create *one* connection instance per process, no matter how many times you import the client.
 
-Ce package fournit une abstraction pour se connecter à Supabase avec deux types de clients :
-- **Anon Client** : Utilise la clé anonyme (`SUPABASE_ANON_KEY`) - respecte les politiques RLS
-- **Service Client** : Utilise la service role key (`SUPABASE_SERVICE_ROLE_KEY`) - bypass les politiques RLS (backend uniquement)
+### 2. Row Level Security (RLS)
+We use Supabase's RLS to secure data.
+- **Anon Client** (`createAnonClient`): Uses the `anon` key. It respects RLS policies. This simulates what a user on the frontend would see.
+- **Service Client** (`createServiceClient`): Uses the `service_role` key. It **bypasses** RLS. This is for admin tasks or background workers that need full access.
 
-## 🚀 Usage
+**⚠️ Security Warning:** Never expose the `service_role` key or client to the public internet/frontend!
 
-### Configuration
-
-Créez un fichier `.env.local` à la racine du monorepo avec :
-
-```env
-SUPABASE_URL=http://localhost:54321
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-### Utilisation du client anonyme
-
-```typescript
-import { createAnonClient } from '@runflow/db';
-
-const client = createAnonClient({
-  supabaseUrl: process.env.SUPABASE_URL!,
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY!,
-});
-
-// Les requêtes respectent les politiques RLS
-const { data, error } = await client
-  .from('profiles')
-  .select('*');
-```
-
-### Utilisation du client service (backend)
+## 📦 Usage
 
 ```typescript
 import { createServiceClient } from '@runflow/db';
 
-const client = createServiceClient({
-  supabaseUrl: process.env.SUPABASE_URL!,
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY!,
-  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+const db = createServiceClient({
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
 });
 
-// Les requêtes bypassent les politiques RLS
-const { data, error } = await client
-  .from('profiles')
-  .select('*');
+// Now you can query
+const { data, error } = await db.from('profiles').select('*');
 ```
-
-## 🏗️ Architecture
-
-### Pattern Singleton
-
-Les clients sont créés une seule fois et réutilisés :
-
-```typescript
-const client1 = createAnonClient(config);
-const client2 = createAnonClient(config);
-// client1 === client2 (même instance)
-```
-
-### Réinitialisation (tests)
-
-Pour les tests, vous pouvez réinitialiser les singletons :
-
-```typescript
-import { resetClients } from '@runflow/db';
-
-beforeEach(() => {
-  resetClients();
-});
-```
-
-## 📝 API
-
-### `createAnonClient(config: SupabaseClientConfig)`
-
-Crée ou retourne le client anonyme singleton.
-
-**Paramètres :**
-- `config.supabaseUrl` (string) - URL de votre instance Supabase
-- `config.supabaseAnonKey` (string) - Clé anonyme Supabase
-
-**Retourne :** `SupabaseClient<Database>`
-
-**Throws :** Erreur si la configuration est invalide
-
-### `createServiceClient(config: SupabaseClientConfig)`
-
-Crée ou retourne le client service singleton.
-
-**Paramètres :**
-- `config.supabaseUrl` (string) - URL de votre instance Supabase
-- `config.supabaseAnonKey` (string) - Clé anonyme Supabase
-- `config.supabaseServiceRoleKey` (string) - Service role key Supabase
-
-**Retourne :** `SupabaseClient<Database>`
-
-**Throws :** Erreur si la configuration est invalide
-
-### `resetClients()`
-
-Réinitialise les instances singleton (utile pour les tests).
-
-### `testConnection(client: SupabaseClient)`
-
-Teste la connexion à la base de données.
-
-**Retourne :** `Promise<boolean>` - `true` si la connexion fonctionne
-
-## 🧪 Tests
-
-### Lancer les tests
-
-```bash
-pnpm test
-```
-
-### Coverage
-
-```bash
-pnpm test -- --coverage
-```
-
-### Tests en watch mode
-
-```bash
-pnpm test:watch
-```
-
-## 🔒 Sécurité
-
-### ⚠️ Important : Service Role Key
-
-**Ne jamais exposer la `SUPABASE_SERVICE_ROLE_KEY` côté client !**
-
-Cette clé donne un accès complet à votre base de données et bypass toutes les politiques RLS.
-
-✅ **Bon usage :**
-- Backend API (Node.js, Fastify, Express)
-- Scripts d'administration
-- Workers/Jobs en arrière-plan
-
-❌ **Mauvais usage :**
-- Code frontend (React, Vue, etc.)
-- Applications mobiles
-- Code client en général
-
-### Clé anonyme
-
-La `SUPABASE_ANON_KEY` peut être utilisée côté client car elle respecte les politiques RLS.
-
-## 🔄 Future : Types générés
-
-Actuellement, le type `Database` utilise `any` pour les tables. Dans une future version, nous générerons les types TypeScript depuis le schéma Supabase :
-
-```bash
-supabase gen types typescript --local > packages/db/src/database.types.ts
-```
-
-Cela permettra l'autocomplétion et la vérification de types pour toutes les requêtes.
-
-## 📚 Documentation Supabase
-
-- [Documentation officielle Supabase](https://supabase.com/docs)
-- [supabase-js Reference](https://supabase.com/docs/reference/javascript/introduction)
-- [Row Level Security (RLS)](https://supabase.com/docs/guides/auth/row-level-security)
-
-## 🛠️ Scripts
-
-- `pnpm build` - Compile le package TypeScript
-- `pnpm test` - Lance les tests unitaires
-- `pnpm test:watch` - Tests en mode watch
-- `pnpm lint` - Vérifie le code avec ESLint

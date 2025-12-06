@@ -4,6 +4,12 @@ import { createAnonClient, createServiceClient } from '@runflow/db';
 import { registerRoutes } from './routes';
 import type { ApiConfig } from './config';
 
+/**
+ * Factory function to create the Fastify server instance.
+ * 
+ * @param config - The validated configuration object (env vars).
+ * @returns The initialized Fastify application.
+ */
 export async function createServer(config: ApiConfig): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: {
@@ -21,7 +27,8 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
     },
   });
 
-  // Register CORS
+  // Register CORS (Cross-Origin Resource Sharing)
+  // This allows frontend apps connecting from different domains/ports to access this API.
   await fastify.register(cors, {
     origin: config.nodeEnv === 'production' ? false : true, // In prod, configure specific origins
     credentials: true,
@@ -40,12 +47,15 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
   });
 
   // Decorate fastify instance with db clients
+  // This makes `fastify.db` available in all routes via the request object.
+  // It's a form of Dependency Injection.
   fastify.decorate('db', {
     anon: anonClient,
     service: serviceClient,
   });
 
   // Register routes
+  // We separate route definitions into different files to keep this file clean.
   await registerRoutes(fastify);
 
   return fastify;

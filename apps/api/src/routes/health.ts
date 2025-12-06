@@ -1,8 +1,13 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { HealthResponse, DbHealthResponse } from '../types';
 
+/**
+ * Health check routes.
+ * These are used by monitoring tools (like AWS, Kubernetes) to ensure the app is alive.
+ */
 export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /health - Basic health check
+  // The generic <{ Reply: HealthResponse }> ensures our return type matches the interface.
   fastify.get<{ Reply: HealthResponse }>('/health', async (
     _request: FastifyRequest,
     reply: FastifyReply
