@@ -8,9 +8,15 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "resolveJsonModule": true,
     "sourceMap": true,
     "outDir": "dist",
-    "types": ["node", "vitest/globals"]
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
   }
 }
