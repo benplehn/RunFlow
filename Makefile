@@ -1,4 +1,4 @@
-.PHONY: help dev test test-unit test-db test-all lint format build clean
+.PHONY: help dev test test-unit test-db test-api test-all lint format build clean
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -19,7 +19,13 @@ test-unit: ## Run unit tests
 test-db: ## Run database tests
 	pnpm test:db
 
-test-all: ## Run all tests (unit + database)
+test-api: ## Run API tests (build + test @runflow/api)
+	pnpm --filter @runflow/db build
+	pnpm --filter @runflow/api build
+	pnpm --filter @runflow/db test
+	pnpm --filter @runflow/api test
+
+test-all: ## Run all tests (unit + database + API)
 	pnpm test:all
 
 test-coverage: ## Generate test coverage report

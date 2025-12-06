@@ -1,123 +1,109 @@
-# RunFlow Monorepo
+# 🏃‍♂️ RunFlow Monorepo
 
-[![CI](https://github.com/YOUR_USERNAME/RunFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/RunFlow/actions/workflows/ci.yml)
+> **Backend-for-Frontend (BFF) & Worker System for RunFlow**
 
-Backend-for-frontend focused monorepo for RunFlow, providing API and worker apps with shared packages.
+![CI](https://github.com/benplehn/RunFlow/actions/workflows/ci.yml/badge.svg)
 
-## Structure
+## 🌟 What is this?
 
-- `apps/` – Fastify BFF (`api`) and BullMQ worker (`worker`).
-- `packages/` – Domain logic, database access, schemas, configuration, telemetry, and integration services.
-- `infra/` – Infrastructure assets such as Supabase migrations and Docker Compose definitions.
+This is the backend repository for RunFlow. It is a **monorepo**, meaning multiple related projects live together in one place.
 
-## Tooling
+It includes:
+- **API**: A Fastify server that handles requests from the frontend app.
+- **Worker**: A background job processor (using BullMQ) for heavy tasks.
+- **Packages**: Shared code (database clients, types, configs) used by both the API and Worker.
+- **Infrastructure**: Supabase (Postgres) and Docker definitions.
 
-- **pnpm** for workspace management
-- **Turborepo** for task orchestration
-- **TypeScript** across all packages
-- **ESLint** + **Prettier** for formatting and linting
-- **Vitest** for testing
+---
 
-### Common commands
+## 🚀 Quick Start Guide
 
-Run from the repository root:
+**Prerequisites:**
+- [Node.js](https://nodejs.org/) (v20+)
+- [pnpm](https://pnpm.io/) (v9+)
+- [Docker Desktop](https://www.docker.com/) (for running the database locally)
 
-- `pnpm dev` – starts development servers for all apps
-- `pnpm build` – type-checks and builds packages/apps in dependency order through Turborepo
-- `pnpm lint` – workspace linting with a single source of truth ESLint config
-- `pnpm format` – format code with Prettier
-
-#### Testing
-
-- `pnpm test` or `pnpm test:unit` – runs unit tests (Vitest) across all packages
-- `pnpm test:db` – runs database tests (pgTAP) against local Postgres
-- `pnpm test:all` – runs both unit and database tests (recommended before commits)
-- `pnpm test:watch` – runs unit tests in watch mode for rapid development
-- `pnpm test:coverage` – generates coverage reports
-
-#### Database Management
-
-- `pnpm db:migrate` – applies migrations to the database specified by `DATABASE_URL`
-- `pnpm db:reset` – resets database and reapplies all migrations (local only)
-- `pnpm db:test` – runs pgTAP database tests
-
-> Each package exposes `build`, `lint`, and `test` scripts so the orchestrator remains simple and predictable.
-
-## Supabase & local services
-
-- Define environment variables in `.env` (see `.env.example`).
-- Supabase migrations live in `infra/supabase/migrations` and are applied via the Supabase CLI (`supabase db push --workdir infra/supabase`).
-- Local dependencies are orchestrated with Docker Compose in `infra/docker` (Redis by default; optional Supabase Postgres profile for offline migration testing).
-
-Use `pnpm` scripts at the repository root to run tasks across the workspace once Node and pnpm are available.
-
-## CI/CD Pipeline
-
-The project uses GitHub Actions for continuous integration. The CI pipeline validates both foundational steps:
-
-### Étape 1 - Socle Monorepo & Outillage ✅
-
-The CI verifies that the backend can:
-
-- ✅ **Compile and test reproducibly**
-  - Install all dependencies: `pnpm install`
-  - Build API + worker + packages: `pnpm build`
-  - Run unit tests: `pnpm test`
-- ✅ **Follow target architecture**
-  - Physical separation: `apps/api`, `apps/worker`, `packages/*`
-  - Correct inter-package imports via TypeScript paths
-- ✅ **Ensure minimum quality standards**
-  - Static analysis: `pnpm lint`
-  - Consistent code formatting: `pnpm format`
-
-### Étape 2 - Supabase & Infrastructure ✅
-
-The CI verifies that the backend can:
-
-- ✅ **Provision Supabase from scratch**
-  - Create empty but compliant database: `pnpm db:migrate`
-  - Recreate clean local environment: `pnpm db:reset`
-- ✅ **Manage environments**
-  - Distinguish local dev vs cloud Supabase
-  - Load correct configuration via `packages/config` (validated with Zod)
-- ✅ **Connect to Supabase in typed, centralized way**
-  - Expose Supabase client factories in `packages/db`
-  - Anon client (future user-space usage)
-  - Service role client (API/worker, not exposed to client)
-- ✅ **Verify database state**
-  - Execute pgTAP tests demonstrating:
-    - Database responds
-    - Required extensions (uuid, pgcrypto, pgtap) are present
-    - Schema structure is valid (tables, indexes, constraints)
-    - RLS policies are enabled and defined
-    - Custom functions exist and work
-
-### Running CI Locally
-
-You can run the same checks locally before pushing:
-
+### 1. Setup the project
 ```bash
-# Full CI pipeline
-make ci
-
-# Or step by step:
+# Install all dependencies for all apps and packages
 pnpm install
-pnpm lint
-pnpm build
-pnpm test:unit
-pnpm db:test
 ```
 
-### CI Workflow
+### 2. Start the database (Supabase)
+Make sure Docker is running, then:
+```bash
+# Starts Supabase locally and applies database migrations
+pnpm db:setup
+```
 
-The GitHub Actions workflow ([.github/workflows/ci.yml](.github/workflows/ci.yml)) includes:
+### 3. Run the development server
+```bash
+# Starts the API, Worker, and watches for changes
+pnpm dev
+```
 
-1. **Install & Cache** - Install dependencies with caching
-2. **Lint** - ESLint + Prettier format check
-3. **Build** - Compile all packages and apps
-4. **Unit Tests** - Run Vitest tests with coverage
-5. **Database Tests** - Run pgTAP tests against PostgreSQL service
-6. **Validation** - Verify Steps 1 & 2 completion criteria
-7. **Summary** - Display CI results
+That's it! 
+- The **API** will be running at `http://localhost:4000`.
+- The **Supabase Dashboard** (local) will be at `http://localhost:54323`.
 
-All checks must pass for the pipeline to succeed.
+---
+
+## 🏛️ How it works
+
+This project uses **Turborepo** to manage tasks. Instead of running commands in each folder, you run them from the root, and Turbo handles the rest.
+
+### Folder Structure
+```
+RunFlow/
+├── apps/               # Runnable applications
+│   ├── api/            # HTTP Server (Fastify)
+│   └── worker/         # Background Job Runner (BullMQ)
+│
+├── packages/           # Shared libraries
+│   ├── db/             # Database client (Supabase)
+│   ├── domain/         # Business logic & calculations
+│   ├── schemas/        # Types & Validation (Zod)
+│   └── config/         # Environment variables
+│
+└── infra/              # Infrastructure
+    ├── supabase/       # Database migrations & config
+    └── docker/         # Docker Compose files
+```
+
+### Common Commands
+
+| Command | Description |
+| :--- | :--- |
+| `pnpm dev` | Start everything in development mode |
+| `pnpm build` | Compile all TypeScript code |
+| `pnpm test` | Run unit tests |
+| `pnpm test:db` | Run database tests (pgTAP) |
+| `pnpm db:migrate` | Update your local database schema |
+| `pnpm db:reset` | **Wipe** local DB and re-apply all migrations |
+
+---
+
+## 🧠 Key Concepts for Beginners
+
+### 1. The Monorepo (Workspaces)
+We use `pnpm workspaces`. Code in `packages/` can be imported by `apps/`.
+*Example:* The `api` app imports the database client from `@runflow/db` (which lives in `packages/db`).
+
+### 2. The Database (Supabase)
+We use Supabase (which is PostgreSQL + tools).
+- **Migrations**: SQL files in `infra/supabase/migrations` define the database structure.
+- **Types**: We generate TypeScript types from the DB schema automatically (not set up yet, but coming soon).
+
+### 3. The API (Fastify)
+Fastify is a fast, low-overhead web framework for Node.js. It's similar to Express but faster and with better TypeScript support.
+
+---
+
+## ✅ CI/CD Pipeline
+
+We use GitHub Actions to test code automatically.
+
+1. **Lint & Build**: Checks code style and compilation.
+2. **Unit Tests**: Runs logic tests in isolation.
+3. **Database Tests**: Spins up a real Postgres DB to test storage logic.
+4. **API Tests**: Runs the server and makes real HTTP requests to verify health.

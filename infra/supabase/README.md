@@ -24,6 +24,10 @@ Tout ce qui concerne Supabase (migrations SQL, config CLI, tests pgTAP) vit ici.
    cd infra/docker
    docker compose -f docker-compose.dev.yml up -d
    ```
+   Alternative (stack complète via le CLI, depuis la racine) :
+   ```bash
+   pnpm supabase:start   # wraps: supabase start --workdir infra/supabase
+   ```
 3. Appliquer les migrations (schéma + RLS) sur la base locale :
    ```bash
    pnpm db:migrate
