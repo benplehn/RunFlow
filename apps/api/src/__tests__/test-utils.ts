@@ -10,7 +10,7 @@ import { join } from 'path';
  */
 export function ensureSupabaseEnv(): void {
   if (!process.env.SUPABASE_URL) {
-    process.env.SUPABASE_URL = 'http://localhost:54321';
+    process.env.SUPABASE_URL = 'http://127.0.0.1:54321';
   }
 
   const keysPathCandidates = [

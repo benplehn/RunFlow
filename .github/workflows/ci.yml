@@ -141,7 +141,7 @@ jobs:
           supabase start --workdir infra/supabase
           # Export runtime keys directly from Supabase status (CLI v2.65+)
           STATUS_JSON="$(supabase status --workdir infra/supabase -o json | sed -n '/^{/,$p')"
-          echo "SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL')" >> $GITHUB_ENV
+          echo "SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL' | sed 's/localhost/127.0.0.1/')" >> $GITHUB_ENV
           echo "SUPABASE_ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.ANON_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
@@ -297,7 +297,7 @@ jobs:
           supabase start --workdir infra/supabase
           # Export runtime keys directly from Supabase status (CLI v2.65+)
           STATUS_JSON="$(supabase status --workdir infra/supabase -o json | sed -n '/^{/,$p')"
-          echo "SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL')" >> $GITHUB_ENV
+          echo "SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL' | sed 's/localhost/127.0.0.1/')" >> $GITHUB_ENV
           echo "SUPABASE_ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.ANON_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
