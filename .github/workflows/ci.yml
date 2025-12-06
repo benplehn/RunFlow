@@ -145,7 +145,7 @@ jobs:
           echo "SUPABASE_ANON_KEY=$(echo "$STATUS_JSON" | jq -r '.ANON_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
-          until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do
+          until curl -sf http://127.0.0.1:54321/rest/v1/ >/dev/null; do
             echo "Waiting for Supabase REST..."
             sleep 3
           done
@@ -156,6 +156,15 @@ jobs:
       - name: Reload schema cache
         run: |
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema'"
+          sleep 3
+
+      - name: Verify schema via API
+        run: |
+          echo "Verifying 'profiles' table is visible via API..."
+          curl -sS -f "http://127.0.0.1:54321/rest/v1/profiles?select=count" -H "apikey: $SUPABASE_ANON_KEY" || {
+             echo "ERROR: 'profiles' table not found in API. PostgREST schema cache might be stale."
+             exit 1
+          }
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -228,25 +237,25 @@ jobs:
 
       - name: Wait for PostgreSQL to be ready
         run: |
-          until pg_isready -h localhost -p 54322 -U postgres; do
+          until pg_isready -h 127.0.0.1 -p 54322 -U postgres; do
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
 
       - name: Enable pgTAP extension
         run: |
-          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
 
       - name: Apply database migrations
         run: pnpm db:migrate
 
       - name: Verify database connectivity
         run: |
-          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -c "SELECT version();"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "SELECT version();"
 
       - name: Verify required extensions
         run: |
-          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -c "
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "
             SELECT extname, extversion
             FROM pg_extension
             WHERE extname IN ('uuid-ossp', 'pgcrypto', 'pgtap')
@@ -258,7 +267,7 @@ jobs:
 
       - name: Verify all tables exist
         run: |
-          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -c "\dt public.*"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "\dt public.*"
 
   # ================================
   # Étape 3 - API Fastify & Healthcheck DB
@@ -306,7 +315,7 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
           echo "SUPABASE_JWT_SECRET=$(echo "$STATUS_JSON" | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
           # Wait for REST API to be ready
-          until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do
+          until curl -sf http://127.0.0.1:54321/rest/v1/ >/dev/null; do
             echo "Waiting for Supabase REST..."
             sleep 3
           done
@@ -317,6 +326,15 @@ jobs:
       - name: Reload schema cache
         run: |
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema'"
+          sleep 3
+
+      - name: Verify schema via API
+        run: |
+          echo "Verifying 'profiles' table is visible via API..."
+          curl -sS -f "http://127.0.0.1:54321/rest/v1/profiles?select=count" -H "apikey: $SUPABASE_ANON_KEY" || {
+             echo "ERROR: 'profiles' table not found in API. PostgREST schema cache might be stale."
+             exit 1
+          }
 
       - name: Build @runflow/db
         run: pnpm --filter @runflow/db build
