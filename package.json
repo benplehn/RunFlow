@@ -15,7 +15,7 @@
     "supabase:status": "supabase status --workdir infra/supabase",
     "supabase:restart": "pnpm supabase:stop && pnpm supabase:start",
     "db:migrate": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db push --workdir infra/supabase --db-url \"$DB_URL\"",
-    "db:reset": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db reset --workdir infra/supabase --db-url \"$DB_URL\" --no-confirmation",
+    "db:reset": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db reset --workdir infra/supabase --db-url \"$DB_URL\" --yes",
     "db:test": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres?sslmode=disable}\"; for test in infra/supabase/tests/*.sql; do echo \"Running $test...\"; psql \"$DB_URL\" -f \"$test\" || exit 1; done; echo \"\\n✓ All database tests passed!\"",
     "db:setup": "pnpm supabase:start && pnpm db:migrate",
     "test:unit": "turbo test",
