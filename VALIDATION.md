@@ -306,13 +306,362 @@ make ci
 
 ---
 
+---
+
+## 🎯 Étape 3 – API Fastify Minimale & Healthcheck DB
+
+### Objectif
+
+Le backend doit être capable de démarrer un serveur HTTP fiable, répondre aux health checks, et vérifier la connectivité à la base de données.
+
+### Critères de Validation
+
+#### ✅ Démarrer un serveur HTTP fiable
+
+**Localement :**
+
+```bash
+# Démarrer l'API en mode développement (avec hot-reload)
+pnpm --filter @runflow/api dev
+```
+
+**Résultat attendu :** Le serveur démarre sur le port 4000 avec les logs :
+
+```
+[12:00:00 UTC] INFO: Server listening on port 4000
+```
+
+**Vérification des fonctionnalités :**
+
+- ✅ Fastify configuré avec Pino logging
+- ✅ Gestion de la sérialisation JSON (intégrée)
+- ✅ CORS configuré (permissif en dev, restrictif en prod)
+- ✅ Graceful shutdown sur SIGINT/SIGTERM
+
+**En CI :** Le job `test-api` démarre le serveur et vérifie qu'il répond.
+
+#### ✅ Répondre à un healthcheck simple
+
+**Localement :**
+
+```bash
+# Avec le serveur lancé
+curl http://localhost:4000/health
+```
+
+**Résultat attendu (200 OK) :**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-12-06T12:00:00.000Z"
+}
+```
+
+**Tests :**
+
+```bash
+pnpm --filter @runflow/api test
+```
+
+Le test vérifie :
+- ✅ Status code 200
+- ✅ Body contient `status: "ok"`
+- ✅ Timestamp valide
+
+**En CI :** Le job `test-api` exécute les tests automatiquement.
+
+#### ✅ Vérifier la connectivité à la base
+
+**Localement :**
+
+```bash
+# 1. Démarrer Supabase (si pas déjà fait)
+supabase start --workdir infra/supabase
+
+# 2. Vérifier le health check DB
+curl http://localhost:4000/health/db
+```
+
+**Résultat attendu (200 OK) :**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-12-06T12:00:00.000Z",
+  "database": {
+    "connected": true
+  }
+}
+```
+
+**En cas de DB down (503 Service Unavailable) :**
+
+```json
+{
+  "status": "error",
+  "timestamp": "2025-12-06T12:00:00.000Z",
+  "details": "Database connection failed",
+  "database": {
+    "connected": false
+  }
+}
+```
+
+**Tests :**
+
+Les tests vérifient les deux scénarios :
+- ✅ DB up → 200 avec `connected: true`
+- ✅ DB down → 503 avec `connected: false` (mocké)
+
+**En CI :** Le job `test-api` lance Supabase avant de tester la route.
+
+#### ✅ Être intégrable dans un pipeline CI
+
+**Build de l'API :**
+
+```bash
+pnpm --filter @runflow/api build
+```
+
+**Résultat attendu :** Le code TypeScript est compilé vers JavaScript dans `apps/api/dist/`
+
+**Tests d'intégration :**
+
+```bash
+pnpm --filter @runflow/api test
+```
+
+**Résultat attendu :** 5 tests passent
+- 2 tests d'initialisation du serveur
+- 3 tests des routes health
+
+**En CI :** Le job `test-api` exécute :
+1. Build de `@runflow/db`
+2. Build de `@runflow/api`
+3. Démarrage de Supabase
+4. Tests avec Vitest
+
+### Package @runflow/db
+
+L'API dépend du package `@runflow/db` qui fournit :
+
+**Factory pattern :**
+
+```typescript
+import { createAnonClient, createServiceClient } from '@runflow/db';
+
+// Client anonyme (respecte RLS)
+const anonClient = createAnonClient({
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+});
+
+// Client service (bypass RLS, backend uniquement)
+const serviceClient = createServiceClient({
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+});
+```
+
+**Pattern singleton :** Les clients sont réutilisés (pas de reconnexion à chaque appel)
+
+**Tests :** 8 tests unitaires avec mocks Supabase
+
+### Configuration Requise
+
+**Variables d'environnement (.env.local) :**
+
+```env
+# Supabase
+SUPABASE_URL=http://localhost:54321
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# API (optionnel)
+PORT=4000
+NODE_ENV=development
+LOG_LEVEL=debug
+```
+
+**Validation au démarrage :**
+
+L'API refuse de démarrer si les variables requises sont manquantes :
+
+```
+Configuration error: Error: Configuration validation failed:
+SUPABASE_URL is required
+SUPABASE_ANON_KEY is required
+SUPABASE_SERVICE_ROLE_KEY is required
+```
+
+### ✅ Validation Étape 3 Complète
+
+**Commande unique :**
+
+```bash
+# Tout tester localement
+make test-api
+```
+
+Ou manuellement :
+
+```bash
+# 1. Démarrer Supabase
+supabase start --workdir infra/supabase
+
+# 2. Build les packages
+pnpm --filter @runflow/db build
+pnpm --filter @runflow/api build
+
+# 3. Lancer les tests
+pnpm --filter @runflow/db test
+pnpm --filter @runflow/api test
+
+# 4. Test manuel
+pnpm --filter @runflow/api dev
+# Dans un autre terminal :
+curl http://localhost:4000/health
+curl http://localhost:4000/health/db
+```
+
+**Résultat attendu :**
+
+- ✅ `@runflow/db` : 8 tests passent
+- ✅ `@runflow/api` : 5 tests passent
+- ✅ `/health` retourne 200 OK
+- ✅ `/health/db` retourne 200 OK (avec Supabase up)
+- ✅ Build réussit sans erreurs
+- ✅ Lint passe
+- ✅ Hot-reload fonctionne en dev
+
+**En CI :** Le job `test-api` et `validate-step3` vérifient tous les critères.
+
+---
+
+## 📊 Récapitulatif Global
+
+### Validation Locale Complète (Étapes 1, 2 & 3)
+
+```bash
+# 1. Installer dépendances
+pnpm install
+
+# 2. Démarrer Supabase
+supabase start --workdir infra/supabase
+
+# 3. Appliquer migrations
+pnpm db:migrate
+
+# 4. Lancer le pipeline CI complet
+make ci
+```
+
+**Résultat attendu :**
+
+- ✅ Lint passe
+- ✅ Build réussit (tous les packages + API)
+- ✅ Tests unitaires passent
+  - `@runflow/domain`: 4 tests
+  - `@runflow/db`: 8 tests
+  - `@runflow/api`: 5 tests
+- ✅ Tests DB passent (57 tests pgTAP)
+- ✅ API démarre et répond aux health checks
+
+### Validation CI (GitHub Actions)
+
+**Déclenchement :** Push ou PR vers `main` ou `develop`
+
+**Jobs exécutés :**
+
+1. ✅ `install-and-cache` - Installation et cache des dépendances
+2. ✅ `lint` - ESLint + Prettier
+3. ✅ `build` - Compilation TypeScript
+4. ✅ `test-unit` - Tests Vitest + Coverage
+5. ✅ `test-database` - Provisionnement PostgreSQL + Tests pgTAP
+6. ✅ `test-api` - Tests API avec Supabase (**NOUVEAU**)
+7. ✅ `validate-step1` - Vérification étape 1
+8. ✅ `validate-step2` - Vérification étape 2
+9. ✅ `validate-step3` - Vérification étape 3 (**NOUVEAU**)
+10. ✅ `ci-summary` - Résumé
+
+**Visualisation :** Badge CI dans le README montre le statut.
+
+### Commandes Récapitulatives
+
+| Commande                         | Description                            |
+| -------------------------------- | -------------------------------------- |
+| `pnpm install`                   | Installer toutes les dépendances       |
+| `pnpm build`                     | Compiler API + worker + packages       |
+| `pnpm lint`                      | Vérifier qualité du code               |
+| `pnpm test`                      | Lancer tests unitaires                 |
+| `pnpm test:all`                  | Tests unitaires + DB                   |
+| `pnpm --filter @runflow/api dev` | Lancer l'API avec hot-reload           |
+| `pnpm db:migrate`                | Appliquer migrations                   |
+| `pnpm db:reset`                  | Reset DB et ré-appliquer migrations    |
+| `pnpm db:test`                   | Tests pgTAP uniquement                 |
+| `make ci`                        | Pipeline CI complet en local           |
+| `make test-api`                  | Tests API uniquement (**NOUVEAU**)     |
+| `make test-db`                   | Tests DB uniquement                    |
+| `make help`                      | Voir toutes les commandes Make         |
+
+---
+
+## ✅ Checklist de Validation
+
+### Étape 1 - Socle Monorepo
+
+- [ ] `pnpm install` fonctionne sans erreur
+- [ ] `pnpm build` compile tous les packages
+- [ ] `pnpm test` lance les tests unitaires
+- [ ] Structure monorepo respectée (apps/ et packages/)
+- [ ] `pnpm lint` ne retourne aucune erreur
+- [ ] `pnpm format --check` passe
+
+### Étape 2 - Supabase Infrastructure
+
+- [ ] Stack Docker démarre (`docker compose up`)
+- [ ] `pnpm db:migrate` applique les migrations
+- [ ] `pnpm db:reset` fonctionne
+- [ ] `pnpm db:test` passe tous les tests pgTAP
+- [ ] Les 8 tables sont créées
+- [ ] RLS est activé sur toutes les tables
+- [ ] Les extensions requises sont installées
+
+### Étape 3 - API Fastify & Health Checks
+
+- [ ] `@runflow/db` build sans erreur
+- [ ] `@runflow/db` tests passent (8/8)
+- [ ] `@runflow/api` build sans erreur
+- [ ] `@runflow/api` tests passent (5/5)
+- [ ] `pnpm --filter @runflow/api dev` démarre le serveur
+- [ ] `/health` retourne 200 OK
+- [ ] `/health/db` retourne 200 OK (avec Supabase)
+- [ ] `/health/db` retourne 503 (sans Supabase)
+- [ ] Hot-reload fonctionne (tsx watch)
+- [ ] Graceful shutdown fonctionne (Ctrl+C)
+- [ ] Variables d'environnement validées au démarrage
+- [ ] Logs pretty en dev, JSON en prod
+
+### CI/CD
+
+- [ ] GitHub Actions configuré (`.github/workflows/ci.yml`)
+- [ ] Badge CI ajouté au README
+- [ ] Tous les jobs CI passent au vert
+- [ ] Job `test-api` configuré et fonctionnel
+- [ ] Job `validate-step3` configuré et fonctionnel
+- [ ] Documentation CI complète
+
+---
+
 ## 🚀 Prochaines Étapes
 
-Une fois les étapes 1 et 2 validées :
+Une fois les étapes 1, 2 et 3 validées :
 
-1. **Étape 3** : Implémenter les endpoints API
-2. **Étape 4** : Mettre en place les workers BullMQ
-3. **Étape 5** : Ajouter l'authentification Supabase
-4. **Étape 6** : Déploiement en production
+1. **Étape 4** : Ajouter l'authentification Supabase
+2. **Étape 5** : Implémenter les endpoints métier (training plans, workouts, clubs)
+3. **Étape 6** : Mettre en place les workers BullMQ
+4. **Étape 7** : Déploiement en production
 
-Le monorepo est maintenant **sain, compilable, testable** et prêt pour la suite du développement ! 🎉
+Le monorepo est maintenant **sain, compilable, testable** avec une API HTTP fonctionnelle et observable ! 🎉
