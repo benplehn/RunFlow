@@ -320,17 +320,8 @@ jobs:
             sleep 3
           done
 
-      - name: Pre-check Debug Info
-        run: |
-          echo "=== Docker Containers ==="
-          docker ps -a
-          echo "=== Listening Ports ==="
-          sudo ss -tulpn || echo "ss not available"
-          echo "=== Curl Root Check ==="
-          curl -v http://127.0.0.1:54321/rest/v1/ || echo "Curl failed"
-
       - name: Apply database migrations
-        run: pnpm db:migrate
+        run: pnpm db:reset
 
       - name: Reload schema cache
         run: |
@@ -340,12 +331,10 @@ jobs:
       - name: Verify schema via API
         run: |
           echo "Verifying 'profiles' table is visible via API..."
-          curl -sS -f "http://127.0.0.1:54321/rest/v1/profiles?select=count" -H "apikey: $SUPABASE_ANON_KEY" || {
-             echo "ERROR: 'profiles' table not found in API."
-             echo "=== PostgREST Container Logs ==="
-             docker logs $(docker ps -q --filter name=rest)
-             echo "=== Postgres Container Logs ==="
-             docker logs $(docker ps -q --filter name=db)
+          curl -sS -f "http://127.0.0.1:54321/rest/v1/profiles?select=count" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" || {
+             echo "ERROR: 'profiles' table not found in API. PostgREST schema cache might be stale."
              exit 1
           }
 
