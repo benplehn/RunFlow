@@ -2,26 +2,20 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 import { join } from 'path';
 
-// Load .env.local from monorepo root
+// Load .env from monorepo root for local development
 if (!process.env.CI) {
-  // Load .env.cloud first
-  const cloudPath = join(__dirname, '../../../.env.cloud');
-  console.log('Trying to load cloud config from:', cloudPath);
-  const cloudResult = dotenv.config({ path: cloudPath });
+  const envPath = join(__dirname, '../../../.env');
+  const result = dotenv.config({ path: envPath });
 
-  if (cloudResult.error) {
-    console.log('Error loading .env.cloud:', cloudResult.error);
+  if (result.error) {
+    // Silent fail safely - maybe file doesn't exist, which is fine if env vars are set otherwise
+    // But for debugging locally it's good to know.
+    // console.debug('No .env file found at root');
   } else {
-    console.log('Loaded .env.cloud. SUPABASE_URL:', process.env.SUPABASE_URL);
+    // console.debug('Loaded local .env file');
   }
-
-  // Then local
-  const localPath = join(__dirname, '../../../.env.local');
-  console.log('Trying to load local config from:', localPath);
-  dotenv.config({ path: localPath });
-  console.log('After .env.local load. SUPABASE_URL:', process.env.SUPABASE_URL);
 } else {
-  console.log('CI environment detected. Skipping .env file loading.');
+  console.log('CI environment detected. Using injected secrets.');
 }
 
 /**

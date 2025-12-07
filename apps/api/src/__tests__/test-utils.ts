@@ -9,6 +9,14 @@ import { join } from 'path';
  * 3) Fallback dev JWTs used for local testing.
  */
 export function ensureSupabaseEnv(): void {
+  // In CI, we must relies on injected secrets. Never fallback to localhost as it confuses tests.
+  if (process.env.CI) {
+    if (!process.env.SUPABASE_URL) {
+      console.warn('WARNING: SUPABASE_URL is missing in CI environment!');
+    }
+    return;
+  }
+
   if (!process.env.SUPABASE_URL) {
     process.env.SUPABASE_URL = 'http://127.0.0.1:54321';
   }
