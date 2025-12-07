@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { createServer } from '../server';
 import { loadConfig } from '../config';
@@ -154,5 +154,70 @@ describe('Async Training Plan E2E', () => {
       .eq('planned_weeks.plan_id', planId);
 
     expect(totalSessions).toBe(12 * 4); // 48 sessions
+  });
+
+  it('should handle worker failure (simulated) and set status to failed', async () => {
+    // 1. Mock the domain to throw an error
+    // We need to dynamically import the domain to mock it, OR rely on the fact that
+    // generatePlanProcessor uses the imported version.
+    // However, vitest mocks on node_modules are tricky with direct imports.
+    // Let's use a simpler approach: Pass a specific "Magic Value" that causes failure?
+    // No, domain doesn't support that.
+
+    // Let's rely on the fact we are in the same process:
+    const domain = await import('@runflow/domain');
+    const spy = vi
+      .spyOn(domain, 'generateTrainingPlan')
+      .mockImplementation(() => {
+        throw new Error('Simulated Domain Failure');
+      });
+
+    try {
+      // 2. Trigger Job
+      const payload = {
+        objective: 'marathon',
+        level: 'advanced',
+        durationWeeks: 12,
+        sessionsPerWeek: 5,
+        startDate: new Date().toISOString().split('T')[0]
+      };
+
+      const res = await server.inject({
+        method: 'POST',
+        url: '/me/training-plans/generate',
+        headers: { authorization: `Bearer ${authToken}` },
+        payload
+      });
+
+      expect(res.statusCode).toBe(202);
+      const { planId } = JSON.parse(res.body);
+
+      // 3. Poll for Failure
+      let status = 'pending';
+      for (let i = 0; i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        const checkRes = await server.inject({
+          method: 'GET',
+          url: `/me/training-plans/${planId}/status`,
+          headers: { authorization: `Bearer ${authToken}` }
+        });
+        const checkBody = JSON.parse(checkRes.body);
+        status = checkBody.status;
+        if (status === 'failed') break;
+      }
+
+      expect(status).toBe('failed');
+
+      // Check error message in DB?
+      const { data: plan } = await adminClient
+        .from('user_training_plans')
+        .select('description')
+        .eq('id', planId)
+        .single();
+
+      expect(plan?.description).toContain('Simulated Domain Failure');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
