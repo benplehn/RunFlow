@@ -33,7 +33,8 @@ export const configSchema = z.object({
     anonKey: z.string().min(1, { message: 'SUPABASE_ANON_KEY is required' }),
     serviceRoleKey: z
       .string()
-      .min(1, { message: 'SUPABASE_SERVICE_ROLE_KEY is required' })
+      .min(1, { message: 'SUPABASE_SERVICE_ROLE_KEY is required' }),
+    jwtSecret: z.string().min(1, { message: 'SUPABASE_JWT_SECRET is required' })
   })
 });
 
@@ -52,7 +53,8 @@ export function loadConfig(): Config {
     supabase: {
       url: process.env.SUPABASE_URL,
       anonKey: process.env.SUPABASE_ANON_KEY,
-      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      jwtSecret: process.env.SUPABASE_JWT_SECRET
     }
   });
 

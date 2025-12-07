@@ -64,6 +64,8 @@ export async function createServer(
     service: serviceClient
   });
 
+  fastify.decorate('config', config);
+
   // Register Auth Plugin
   // This adds the `requireAuth` decorator to the fastify instance
   await fastify.register(authPlugin);

@@ -8,9 +8,10 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   // Health checks
   await fastify.register(healthRoutes);
 
+  // Auth & Profile
+  await fastify.register(authRoutes);
+  await fastify.register(profileRoutes, { prefix: '/me/profile' });
+
   // Training Plans
   await fastify.register(trainingPlanRoutes, { prefix: '/me/training-plans' });
-
-  await fastify.register(authRoutes);
-  await fastify.register(profileRoutes);
 }

@@ -19,7 +19,7 @@ export async function profileRoutes(fastify: FastifyInstance) {
   };
 
   fastify.get(
-    '/me/profile',
+    '/',
     {
       preHandler: [fastify.requireAuth],
       schema: {
@@ -85,7 +85,7 @@ export async function profileRoutes(fastify: FastifyInstance) {
   );
 
   fastify.put(
-    '/me/profile',
+    '/',
     {
       preHandler: [fastify.requireAuth],
       schema: {

@@ -64,7 +64,7 @@ describe('Profile API Integration Tests', () => {
     await server.close();
   });
 
-  it('GET /me/profile returns 404 if profile does not exist yet', async () => {
+  it('GET /me/profile returns 200 if profile exists', async () => {
     // Verify user profile handling
     // We explicitly ensure the profile exists via upsert to guarantee a known state,
     // regardless of whether an auth trigger is active or not.

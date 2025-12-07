@@ -68,3 +68,5 @@ export function calculateTrainingLoad(
     totalDurationMinutes
   };
 }
+
+export * from './training-plan';

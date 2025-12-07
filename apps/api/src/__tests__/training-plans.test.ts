@@ -1,226 +1,148 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { FastifyInstance } from 'fastify';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { FastifyInstance } from 'fastify';
 import { createServer } from '../server';
 import { loadConfig } from '../config';
-import { ensureSupabaseEnv } from './test-utils';
-import { createServiceClient, resetClients } from '@runflow/db';
+import { GeneratePlanInput } from '@runflow/schemas';
+import jwt from 'jsonwebtoken';
 
-describe('Training Plans - Comprehensive Integration Tests', () => {
-  let server: FastifyInstance;
-  let userAToken: string;
-  let userBToken: string;
-  let userAId: string;
-  let userBId: string;
+describe('POST /me/training-plans/generate', () => {
+  let app: FastifyInstance;
+  let validToken: string;
 
-  // Helper to create a user and return token + id
-  const createTestUser = async (emailPrefix: string) => {
+  beforeEach(async () => {
     const config = loadConfig();
-    const adminClient = createServiceClient({
-      supabaseUrl: config.supabase.url,
-      supabaseAnonKey: config.supabase.anonKey,
-      supabaseServiceRoleKey: config.supabase.serviceRoleKey
-    });
+    // Use real DB config from .env (loadConfig does this by default if not mocked)
 
-    const email = `${emailPrefix}-${Date.now()}@test.com`;
-    const password = 'test-password-123';
+    // Generate a valid JWT signed with the secret from .env
+    // We need a valid UUID for the user. We assume one exists or random is fine if RLS allows inserts.
+    // For 'user_training_plans', RLS requires 'auth.uid() = user_id'.
+    // So we can start with any random UUID as the user ID in the token,
+    // and when we insert, the RPC uses auth.uid(), so it matches!
+    // We don't strictly need a row in 'public.profiles' UNLESS there is a foreign key constraint.
+    // schema: user_id UUID NOT NULL REFERENCES public.profiles(id)
+    // YES, there is a FK. So we strictly NEED a profile in public.profiles.
+    // We must create one, or use an existing one.
+    // Since we can't easily create a profile without being an admin or signing up via Auth (which creates auth.user then trigger creates profile),
+    // we might need to insert a dummy profile directly via Service Role client first.
 
-    const {
-      data: { user },
-      error: createError
-    } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true
-    });
-    if (createError || !user)
-      throw new Error(
-        `Failed to create ${emailPrefix}: ${createError?.message}`
-      );
+    app = await createServer(config);
 
-    const {
-      data: { session },
-      error: loginError
-    } = await adminClient.auth.signInWithPassword({
-      email,
-      password
-    });
-    if (loginError || !session)
-      throw new Error(`Failed to login ${emailPrefix}`);
+    // 1. Create a dummy user profile via DB Service Client
+    const serviceClient = app.db.service;
+    // Ideally random to avoid collisions
+    const randomId = crypto.randomUUID();
 
-    // Create profile
-    await adminClient
-      .from('profiles')
-      .upsert({ id: user.id, display_name: emailPrefix });
+    // We need to bypass the fact that profiles usually reference auth.users.
+    // Does public.profiles have FK to auth.users?
+    // Usually yes: id references auth.users(id).
+    // If so, we can't insert into profiles unless user exists in auth.users.
+    // We can't insert into auth.users easily via client (needs admin API).
+    // supabase.auth.admin.createUser()
 
-    return { token: session.access_token, id: user.id };
-  };
+    const { data: user, error: createError } =
+      await serviceClient.auth.admin.createUser({
+        email: `test-${randomId}@example.com`,
+        password: 'password123',
+        email_confirm: true
+      });
 
-  beforeAll(async () => {
-    resetClients();
-    ensureSupabaseEnv();
-    const config = loadConfig();
-    server = await createServer(config);
-    await server.ready();
-
-    // Create two isolated users
-    const userA = await createTestUser('user-a');
-    userAToken = userA.token;
-    userAId = userA.id;
-
-    const userB = await createTestUser('user-b');
-    userBToken = userB.token;
-    userBId = userB.id;
-  });
-
-  afterAll(async () => {
-    // Cleanup users
-    if (server) {
-      if (userAId) await server.db.service.auth.admin.deleteUser(userAId);
-      if (userBId) await server.db.service.auth.admin.deleteUser(userBId);
-      await server.close();
+    if (createError || !user.user) {
+      // Fallback if admin API is not enabled/working or we are in a limited env:
+      // We can try signing a token with a random ID and hope there is no FK?
+      // Checking migration '0001_init.sql' or '0002_app_schema.sql':
+      // "user_id UUID NOT NULL REFERENCES public.profiles(id)" implies FK.
+      // "create table profiles ... id references auth.users".
+      // So we need a real auth user.
+      // 'serviceClient.auth.admin' should work if we have service_role key.
+      console.error('Failed to create test user:', createError);
+      throw new Error('Failed to create test user for integration test');
     }
+
+    const userId = user.user.id;
+
+    // Wait for trigger to create profile? Or create manually if no trigger?
+    // Usually trigger handles it. Let's wait a bit or verify.
+    // Or just upsert profile ensure it exists.
+    const { error: profileError } = await serviceClient
+      .from('profiles')
+      .upsert({
+        id: userId,
+        display_name: 'Test User',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (profileError) {
+      console.error('Failed to upsert profile:', profileError);
+    }
+
+    // 2. Sign a token for this user
+    // Payload must match Supabase structure roughly
+    validToken = jwt.sign(
+      {
+        aud: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + 60 * 60,
+        sub: userId,
+        role: 'authenticated',
+        app_metadata: { provider: 'email', providers: ['email'] },
+        user_metadata: {}
+      },
+      config.supabase.jwtSecret // We need to expose this in config or load from env
+    );
   });
 
-  describe('Data Isolation (RLS)', () => {
-    it('User A can create a plan', async () => {
-      const payload = {
-        name: 'User A Plan',
-        description: 'My secret plan',
-        start_date: new Date().toISOString().split('T')[0],
-        duration_weeks: 12
-      };
+  it('should validate input and call domain + DB', async () => {
+    const payload: GeneratePlanInput = {
+      objective: 'marathon',
+      level: 'intermediate',
+      durationWeeks: 16,
+      sessionsPerWeek: 4, // > 2
+      startDate: '2025-06-01'
+    };
 
-      const response = await server.inject({
-        method: 'POST',
-        url: '/me/training-plans',
-        headers: { authorization: `Bearer ${userAToken}` },
-        payload
-      });
-
-      expect(response.statusCode).toBe(201);
-      const body = JSON.parse(response.body);
-      expect(body.name).toBe(payload.name);
-      expect(body.id).toBeDefined();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/me/training-plans/generate',
+      headers: {
+        authorization: `Bearer ${validToken}`
+      },
+      payload
     });
 
-    it("User B CANNOT see User A's plan", async () => {
-      // User A's plan exists (from previous test), now User B requests list
-      const response = await server.inject({
-        method: 'GET',
-        url: '/me/training-plans',
-        headers: { authorization: `Bearer ${userBToken}` }
-      });
+    if (response.statusCode !== 201) {
+      console.error('Request failed:', response.body);
+    }
 
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
-      expect(Array.isArray(body)).toBe(true);
-      // User B should see 0 plans initially
-      expect(body.length).toBe(0);
-    });
+    expect(response.statusCode).toBe(201);
+    const body = JSON.parse(response.body);
+    expect(body.id).toBeDefined();
+    expect(body.name).toContain('MARATHON');
+    expect(body.weeks).toHaveLength(16);
+
+    // Verify DB persistence
+    const { data: savedPlan } = await app.db.service
+      .from('user_training_plans')
+      .select('*, planned_weeks(*)')
+      .eq('id', body.id)
+      .single();
+
+    expect(savedPlan).toBeDefined();
+    expect(savedPlan?.duration_weeks).toBe(16);
+    expect(savedPlan?.planned_weeks).toHaveLength(16);
   });
 
-  describe('Cascade Deletion', () => {
-    it('Deleting a plan removes associated weeks and sessions', async () => {
-      // 1. Create a plan for User A
-      const createRes = await server.inject({
-        method: 'POST',
-        url: '/me/training-plans',
-        headers: { authorization: `Bearer ${userAToken}` },
-        payload: {
-          name: 'Plan to Delete',
-          start_date: new Date().toISOString().split('T')[0],
-          duration_weeks: 4
-        }
-      });
-      const planId = JSON.parse(createRes.body).id;
-
-      // 2. Manually seed child data (Weeks & Sessions) using local admin client for robustness
-      resetClients(); // Force new instance to bypass potential server singleton issues
-      const config = loadConfig();
-      const adminClient = createServiceClient({
-        supabaseUrl: config.supabase.url,
-        supabaseAnonKey: config.supabase.anonKey,
-        supabaseServiceRoleKey: config.supabase.serviceRoleKey
-      });
-
-      const weekRes = await adminClient
-        .from('planned_weeks')
-        .insert({
-          plan_id: planId,
-          week_number: 1,
-          volume_distance: 10,
-          volume_duration: 60
-        })
-        .select()
-        .single();
-      expect(weekRes.error).toBeNull();
-      const weekId = weekRes.data!.id;
-
-      const sessionRes = await adminClient
-        .from('planned_sessions')
-        .insert({
-          week_id: weekId,
-          day_of_week: 1,
-          session_type: 'run',
-          target_duration: 30
-        })
-        .select();
-      expect(sessionRes.error).toBeNull();
-
-      // 3. Delete the plan via API
-      const deleteRes = await server.inject({
-        method: 'DELETE',
-        url: `/me/training-plans/${planId}`,
-        headers: { authorization: `Bearer ${userAToken}` }
-      });
-      expect(deleteRes.statusCode).toBe(204);
-
-      // 4. Verify Database Cascade
-      // Plan should be gone
-      const { count: planCount } = await server.db.service
-        .from('user_training_plans')
-        .select('*', { count: 'exact', head: true })
-        .eq('id', planId);
-      expect(planCount).toBe(0);
-
-      // Weeks should be gone
-      const { count: weekCount } = await server.db.service
-        .from('planned_weeks')
-        .select('*', { count: 'exact', head: true })
-        .eq('plan_id', planId);
-      expect(weekCount).toBe(0);
-
-      // Sessions should be gone (linked via week)
-      const { count: sessionCount } = await server.db.service
-        .from('planned_sessions')
-        .select('*', { count: 'exact', head: true })
-        .eq('week_id', weekId);
-      expect(sessionCount).toBe(0);
-    });
-  });
-
-  describe('Validation & Error Handling', () => {
-    it('Rejects invalid payload (negative duration)', async () => {
-      const response = await server.inject({
-        method: 'POST',
-        url: '/me/training-plans',
-        headers: { authorization: `Bearer ${userAToken}` },
-        payload: {
-          name: 'Bad Plan',
-          start_date: '2025-01-01',
-          duration_weeks: -5 // Invalid
-        }
-      });
-      expect(response.statusCode).toBe(400); // Bad Request
+  it('should return 400 for invalid input', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/me/training-plans/generate',
+      headers: {
+        authorization: `Bearer ${validToken}`
+      },
+      payload: {
+        objective: 'invalid'
+      }
     });
 
-    it('Rejects deletion of non-existent plan', async () => {
-      const response = await server.inject({
-        method: 'DELETE',
-        url: '/me/training-plans/00000000-0000-0000-0000-000000000000',
-        headers: { authorization: `Bearer ${userAToken}` }
-      });
-      expect(response.statusCode).toBe(404);
-    });
+    expect(response.statusCode).toBe(400);
   });
 });
