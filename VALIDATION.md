@@ -666,13 +666,70 @@ make ci
 
 ---
 
+
+## 🎯 Étape 4 – Authentification & Identification
+
+### Objectif
+Le backend doit être capable d'identifier l'utilisateur via un JWT Supabase et exposer ses informations dans le contexte de la requête.
+
+### Critères de Validation
+
+#### ✅ Middleware d'Authentification
+**Vérification :**
+- `GET /me` sans token retourne 401.
+- `GET /me` avec token invalide retourne 401.
+- `GET /me` avec token valide retourne 200 et l'objet user.
+
+**Test Unique :**
+```bash
+pnpm --filter @runflow/api test src/__tests__/auth.test.ts
+```
+
+#### ✅ Documentation API
+**Vérification :**
+- Démarrer l'API : `pnpm --filter @runflow/api dev`
+- Accéder à `http://localhost:3001/documentation`
+- Vérifier la présence du cadenas (Auth) sur les routes protégées.
+
+---
+
+## 🎯 Étape 5 – Profils, RLS & Validation
+
+### Objectif
+L'utilisateur peut consulter et modifier son profil. Les données sont validées strictements et protégées par RLS (Row Level Security).
+
+### Critères de Validation
+
+#### ✅ Schema DB & Migration
+**Vérification :**
+- La table `profiles` contient bien la colonne `display_name` (renommée depuis `full_name`).
+- La migration `0003_fix_profile_schema.sql` est appliquée.
+
+#### ✅ Validation des Données (Zod)
+**Vérification :**
+- Tentative de `PUT /me/profile` avec des données invalides (ex: url malformée) retourne **400 Bad Request**.
+- Les types TypeScript sont partagés via `@runflow/schemas`.
+
+#### ✅ Endpoints Profil
+**Test Unique :**
+```bash
+pnpm --filter @runflow/api test src/__tests__/profile.test.ts
+```
+
+**Résultat attendu :**
+- `GET /me/profile` retourne les données du profil de l'utilisateur connecté.
+- `PUT /me/profile` met à jour les champs autorisés et retourne le profil modifié.
+- Protection 401 si non authentifié.
+
+---
+
 ## 🚀 Prochaines Étapes
 
-Une fois les étapes 1, 2 et 3 validées :
+Une fois les étapes 1 à 5 validées :
 
-1. **Étape 4** : Ajouter l'authentification Supabase
-2. **Étape 5** : Implémenter les endpoints métier (training plans, workouts, clubs)
-3. **Étape 6** : Mettre en place les workers BullMQ
-4. **Étape 7** : Déploiement en production
+1. **Étape 6** : Implémenter les endpoints métier (training plans, workouts, clubs)
+2. **Étape 7** : Mettre en place les workers BullMQ
+3. **Étape 8** : Déploiement en production
 
-Le monorepo est maintenant **sain, compilable, testable** avec une API HTTP fonctionnelle et observable ! 🎉
+Le monorepo est maintenant **sain, compilable, testable** avec une API HTTP fonctionnelle, authentifiée et observable ! 🎉
+

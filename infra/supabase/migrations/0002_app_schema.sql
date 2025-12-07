@@ -129,11 +129,8 @@ alter table public.club_members enable row level security;
 
 -- Profiles policies
 create policy "Users can manage their profile" on public.profiles
-  for select using (id = auth.uid())
+  for all using (id = auth.uid())
   with check (id = auth.uid());
-
-create policy "Insert profile matches auth uid" on public.profiles
-  for insert with check (id = auth.uid());
 
 -- Training plan policies
 create policy "Plan owners can manage plans" on public.training_plans

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@runflow/db';
+import type { SupabaseClient, User } from '@runflow/db';
 
 export interface HealthResponse {
   status: 'ok' | 'error';
@@ -19,5 +19,9 @@ declare module 'fastify' {
       anon: SupabaseClient;
       service: SupabaseClient;
     };
+  }
+
+  interface FastifyRequest {
+    user?: User | null;
   }
 }

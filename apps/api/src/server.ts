@@ -1,7 +1,10 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import { createAnonClient, createServiceClient } from '@runflow/db';
 import { registerRoutes } from './routes';
+import authPlugin from './plugins/auth';
 import type { ApiConfig } from './config';
 
 /**
@@ -53,6 +56,43 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
     anon: anonClient,
     service: serviceClient,
   });
+
+  // Register Auth Plugin
+  // This adds the `requireAuth` decorator to the fastify instance
+  await fastify.register(authPlugin);
+
+  // Register Swagger (OpenAPI)
+  if (config.nodeEnv !== 'production') {
+    await fastify.register(fastifySwagger, {
+      swagger: {
+        info: {
+          title: 'RunFlow API',
+          description: 'Backend API for RunFlow application',
+          version: '0.1.0',
+        },
+        host: `localhost:${config.port}`,
+        schemes: ['http'],
+        consumes: ['application/json'],
+        produces: ['application/json'],
+        securityDefinitions: {
+          bearerAuth: {
+            type: 'apiKey',
+            name: 'Authorization',
+            in: 'header',
+            description: 'Supabase JWT (Bearer <token>)',
+          },
+        },
+      },
+    });
+
+    await fastify.register(fastifySwaggerUi, {
+      routePrefix: '/documentation',
+      uiConfig: {
+        docExpansion: 'list',
+        deepLinking: false,
+      },
+    });
+  }
 
   // Register routes
   // We separate route definitions into different files to keep this file clean.

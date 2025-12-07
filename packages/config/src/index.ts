@@ -3,7 +3,22 @@ import dotenv from 'dotenv';
 import { join } from 'path';
 
 // Load .env.local from monorepo root
-dotenv.config({ path: join(__dirname, '../../../.env.local') });
+// Load .env.cloud first
+const cloudPath = join(__dirname, '../../../.env.cloud');
+console.log('Trying to load cloud config from:', cloudPath);
+const cloudResult = dotenv.config({ path: cloudPath });
+
+if (cloudResult.error) {
+  console.log('Error loading .env.cloud:', cloudResult.error);
+} else {
+  console.log('Loaded .env.cloud. SUPABASE_URL:', process.env.SUPABASE_URL);
+}
+
+// Then local
+const localPath = join(__dirname, '../../../.env.local');
+console.log('Trying to load local config from:', localPath);
+dotenv.config({ path: localPath });
+console.log('After .env.local load. SUPABASE_URL:', process.env.SUPABASE_URL);
 
 /**
  * Validated schema for environment variables using Zod.

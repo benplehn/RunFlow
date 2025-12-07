@@ -30,12 +30,18 @@ export function ensureSupabaseEnv(): void {
     }
   }
 
-  const fallbackAnon =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY1MDIyMTIxLCJleHAiOjIxNDc0ODM2NDd9.d2GDdV71EQRtmmtZ4HBHMUfRE2rvACyajFRbyNnhmcQ';
-  const fallbackService =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE3NjUwMjIxMjEsImV4cCI6MjE0NzQ4MzY0N30.IhqAZz2fN6eIYahPaXO1mTWkEkdBeFXjpQuYzUSZ8LM';
+  // We strictly use the keys from the environment (loaded via config pckg or whatever loaded them)
+  // or the ones found specifically in the temp file if we are still relying on that for some reason (which we shouldn't for cloud).
+  // For Cloud switch, we trust the env vars are already loaded or will be loaded by `loadConfig`.
+  // However, `process.env` might need to be populated if not already.
+  // The `loadConfig` call in tests usually happens AFTER this function or inside it.
 
-  process.env.SUPABASE_ANON_KEY ||= keys?.anon_key || fallbackAnon;
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||= keys?.service_role_key || fallbackService;
-  process.env.SUPABASE_JWT_SECRET ||= keys?.jwt_secret || 'dev-jwt-secret';
+  // Actually, let's just ensure if keys are missing we fail, or we trust they are there.
+  // Since we are moving to cloud, we don't need 'sb_publishable...' fallbacks.
+
+  if (keys) {
+    process.env.SUPABASE_ANON_KEY = keys.anon_key;
+    process.env.SUPABASE_SERVICE_ROLE_KEY = keys.service_role_key;
+    process.env.SUPABASE_JWT_SECRET = keys.jwt_secret;
+  }
 }
