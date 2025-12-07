@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { createAnonClient, createServiceClient } from '@runflow/db';
+import { getLoggerOptions } from '@runflow/telemetry';
 import { registerRoutes } from './routes';
 import authPlugin from './plugins/auth';
 import type { ApiConfig } from './config';
@@ -16,20 +17,14 @@ import type { ApiConfig } from './config';
 export async function createServer(
   config: ApiConfig
 ): Promise<FastifyInstance> {
+  const loggerOptions = getLoggerOptions({
+    service: 'api',
+    nodeEnv: config.nodeEnv,
+    level: config.logLevel
+  });
+
   const fastify = Fastify({
-    logger: {
-      level: config.logLevel,
-      ...(config.nodeEnv !== 'production' && {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss Z',
-            ignore: 'pid,hostname'
-          }
-        }
-      })
-    }
+    logger: loggerOptions
   });
 
   // Register CORS (Cross-Origin Resource Sharing)
