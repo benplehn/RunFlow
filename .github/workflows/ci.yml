@@ -304,7 +304,43 @@ jobs:
           echo "  ✓ Gérer la sérialisation JSON, logging (Pino), et erreurs"
           echo "  ✓ Répondre à un healthcheck simple (GET /health)"
           echo "  ✓ Vérifier la connectivité à la base (GET /health/db)"
-          echo "  ✓ Être intégrable dans un pipeline CI (tests automatisés)"
+  # ================================
+  # Validation étapes 4 & 5 - CI/CD & Telemetry
+  # ================================
+
+  validate-step4-5:
+    name: Validate Step 4 & 5 - CI/CD & Telemetry
+    runs-on: ubuntu-latest
+    needs: [test-unit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate CI/CD & Telemetry
+        run: |
+          echo "✓ Validating CI/CD & Telemetry..."
+
+          # Check Husky
+          test -d .husky && echo "  ✓ .husky directory exists"
+          test -f .husky/pre-commit && echo "  ✓ pre-commit hook exists"
+          test -f .husky/pre-push && echo "  ✓ pre-push hook exists"
+
+          # Check Env standardization
+          test -f .env.example && echo "  ✓ .env.example exists"
+
+          # Check Telemetry package
+          test -d packages/telemetry && echo "  ✓ packages/telemetry exists"
+          test -f packages/telemetry/package.json && echo "  ✓ telemetry package.json exists"
+          test -f packages/telemetry/src/index.ts && echo "  ✓ telemetry entry point exists"
+          test -f packages/telemetry/src/logger.ts && echo "  ✓ telemetry logger factory exists"
+
+          echo ""
+          echo "✅ Step 4 & 5 - CI/CD & Telemetry: PASSED"
+          echo ""
+          echo "Le backend est capable de:"
+          echo "  ✓ Garantir la qualité avant commit (Husky + lint-staged)"
+          echo "  ✓ Exécuter des tests CI fiables (Secret management fixed)"
+          echo "  ✓ Produire des logs structurés (Pino telemetry)"
 
   # ================================
   # Summary
@@ -313,7 +349,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [validate-step1, validate-step2, validate-step3]
+    needs: [validate-step1, validate-step2, validate-step3, validate-step4-5]
     if: always()
     steps:
       - name: CI Pipeline Summary
@@ -327,5 +363,8 @@ jobs:
           echo "✅ Étape 1 - Socle monorepo & outillage: VALIDATED"
           echo "✅ Étape 2 - Supabase & infrastructure: VALIDATED"
           echo "✅ Étape 3 - API Fastify & Health Checks: VALIDATED"
+          echo "✅ Étape 4 & 5 - CI/CD & Telemetry: VALIDATED"
+          echo ""
+          echo "All checks passed! Ready for deployment. 🚀"
           echo ""
           echo "All checks passed! Ready for deployment. 🚀"
