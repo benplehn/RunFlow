@@ -65,14 +65,9 @@ describe('Profile API Integration Tests', () => {
   });
 
   it('GET /me/profile returns 404 if profile does not exist yet', async () => {
-    // NOTE: profiles are usually created via triggers on auth.users insert.
-    // If the trigger exists, this might fail (return 200).
-    // Let's check if the trigger exists by trying to fetch first.
-
-    // Actually, for "Pro" tests, we should explicitly control state.
-    // If trigger creates it, we expect 200. If we manually delete it, 404.
-
-    // Let's ensure profile exists (upsert) to be safe for the first positive test.
+    // Verify user profile handling
+    // We explicitly ensure the profile exists via upsert to guarantee a known state,
+    // regardless of whether an auth trigger is active or not.
     const { error } = await adminClient.from('profiles').upsert({
       id: userId,
       display_name: 'Initial Name'
