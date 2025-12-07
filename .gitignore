@@ -11,6 +11,7 @@ coverage
 .temp
 .cache
 .env.*
+.env.cloud
 
 *.tsbuildinfo
 *.log
