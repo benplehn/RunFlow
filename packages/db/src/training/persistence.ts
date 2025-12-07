@@ -12,21 +12,7 @@ export async function saveGeneratedPlan(
   planId: string,
   dto: TrainingPlanDTO
 ) {
-  // 1. Update the main plan status and details
-  const { error: planError } = await client
-    .from('user_training_plans')
-    .update({
-      status: 'generated',
-      name: dto.name,
-      description: dto.description,
-      // start_date: dto.startDate, // Assuming this was set on creation, but can update if needed
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', planId);
-
-  if (planError) throw planError;
-
-  // 2. Insert weeks
+  // 1. Insert weeks
   // We need to map weeks and insert them, retrieving IDs
   const weeksToInsert = dto.weeks.map((week) => ({
     plan_id: planId,
@@ -48,7 +34,7 @@ export async function saveGeneratedPlan(
   if (weeksError) throw weeksError;
   if (!insertedWeeks) throw new Error('No weeks inserted');
 
-  // 3. Insert sessions
+  // 2. Insert sessions
   // We need to map sessions to the correct week_id
   const sessionsToInsert = [];
 
@@ -77,4 +63,18 @@ export async function saveGeneratedPlan(
 
     if (sessionsError) throw sessionsError;
   }
+
+  // 3. Update the main plan status and details (FINAL STEP)
+  const { error: planError } = await client
+    .from('user_training_plans')
+    .update({
+      status: 'generated',
+      name: dto.name,
+      description: dto.description,
+      // start_date: dto.startDate, // Assuming this was set on creation, but can update if needed
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', planId);
+
+  if (planError) throw planError;
 }
