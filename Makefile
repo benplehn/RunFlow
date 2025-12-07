@@ -64,6 +64,9 @@ docker-reset: ## Reset Docker services (removes volumes)
 	cd infra/docker && docker compose -f docker-compose.dev.yml down -v
 
 validate-step-7: ## Step 7: Validate async features (Production Grade Tests)
+	@echo "========================================"
+	@echo "🚀 Running Step 7 Validation: Async Flows"
+	@echo "========================================"
 	pnpm --filter @runflow/api test
 
 ci: lint build test-all validate-step-7 ## Run CI pipeline locally

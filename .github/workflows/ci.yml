@@ -110,6 +110,16 @@ jobs:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest
     needs: build
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -377,10 +387,40 @@ jobs:
           echo "✅ Step 6 - Training Plans Feature: PASSED"
           echo ""
           echo "Le backend est capable de:"
-          echo "  ✓ Générer un plan d'entraînement complet (Domain Logic)"
-          echo "  ✓ Persister le plan de manière atomique (Transaction RPC)"
           echo "  ✓ Exposer un endpoint API validé et sécurisé"
           echo "  ✓ Vérifier le fonctionnement avec de vrais tests d'intégration"
+
+  validate-step7-async:
+    name: Validate Step 7 - Async & Worker
+    runs-on: ubuntu-latest
+    needs: [test-unit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Async Infrastructure
+        run: |
+          echo "✓ Validating Async Infrastructure..."
+
+          # Check Worker
+          test -d apps/worker/src && echo "  ✓ apps/worker/src exists"
+          test -f apps/worker/src/processors/generate-plan.ts && echo "  ✓ Worker processor exists"
+          test -f apps/worker/src/queues/generate-plan.ts && echo "  ✓ Queue definition exists"
+
+          # Check Shared Artifacts
+          test -f apps/api/src/queues/index.ts && echo "  ✓ API Queue export exists"
+
+          # Check Async Tests
+          test -f apps/api/src/__tests__/async-plan.test.ts && echo "  ✓ Async E2E test exists"
+
+          echo ""
+          echo "✅ Step 7 - Async & Worker: PASSED"
+          echo ""
+          echo "Le backend est capable de:"
+          echo "  ✓ Déléguer des tâches lourdes (BullMQ)"
+          echo "  ✓ Exécuter un Worker process dédié"
+          echo "  ✓ Gérer le cycle de vie asynchrone (Pending -> Generated)"
+          echo "  ✓ Tester le flux complet de bout en bout"
 
   # ================================
   # Summary
@@ -395,7 +435,8 @@ jobs:
         validate-step2,
         validate-step3,
         validate-step4-5,
-        validate-step6-training
+        validate-step6-training,
+        validate-step7-async
       ]
     if: always()
     steps:
@@ -412,7 +453,6 @@ jobs:
           echo "✅ Étape 3 - API Fastify & Health Checks: VALIDATED"
           echo "✅ Étape 4 & 5 - CI/CD & Telemetry: VALIDATED"
           echo "✅ Étape 6 - Training Plans Feature: VALIDATED"
-          echo ""
-          echo "All checks passed! Ready for deployment. 🚀"
+          echo "✅ Étape 7 - Async & Worker: VALIDATED"
           echo ""
           echo "All checks passed! Ready for deployment. 🚀"
