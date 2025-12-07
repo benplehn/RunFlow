@@ -20,7 +20,8 @@ src/
 
 - **Fastify**: Core framework.
 - **Supabase**: Database connection via `@runflow/db`.
-- **Zod**: Schema validation (coming soon).
+- **Training Plans**: Generates full training plans using `@runflow/domain`.
+- **Zod**: Schema validation.
 - **Pino**: High-performance logging.
 
 ## 👩‍💻 Developer Guide
@@ -59,3 +60,9 @@ pnpm --filter @runflow/api dev
 ```
 
 The server will start on `http://localhost:4000`.
+
+## 📡 Key Endpoints
+
+### Training Plans
+
+- `POST /me/training-plans/generate`: Generates and saves a full training plan (Plan -> Weeks -> Sessions) in a single atomic transaction.

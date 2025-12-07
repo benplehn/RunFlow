@@ -75,7 +75,7 @@ RunFlow/
 │
 ├── packages/           # Shared libraries (Internal Packages)
 │   ├── db/             # Database Client & Types (@runflow/db)
-│   ├── domain/         # Core Business Logic (@runflow/domain)
+│   ├── domain/         # Core Business Logic (Plan Generation, Phasing) (@runflow/domain)
 │   ├── schemas/        # Zod Schemas & Types (@runflow/schemas)
 │   ├── config/         # Environment Configuration (@runflow/config)
 │   └── services/       # Shared Services (@runflow/services)
