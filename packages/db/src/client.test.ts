@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createAnonClient, createServiceClient, resetClients } from './client';
-import type { SupabaseClientConfig } from './types';
+import type { SupabaseClientConfig } from './client';
 
 // Mock @supabase/supabase-js
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     from: vi.fn(),
-    auth: {},
-  })),
+    auth: {}
+  }))
 }));
 
 const validConfig: SupabaseClientConfig = {
   supabaseUrl: 'https://test.supabase.co',
   supabaseAnonKey: 'anon-key',
-  supabaseServiceRoleKey: 'service-key',
+  supabaseServiceRoleKey: 'service-key'
 };
 
 describe('createAnonClient', () => {
@@ -41,7 +41,10 @@ describe('createAnonClient', () => {
 
   it('throws when missing supabaseAnonKey', () => {
     expect(() =>
-      createAnonClient({ supabaseUrl: 'https://test.supabase.co', supabaseAnonKey: '' })
+      createAnonClient({
+        supabaseUrl: 'https://test.supabase.co',
+        supabaseAnonKey: ''
+      })
     ).toThrow(/Missing required Supabase configuration/);
   });
 });
@@ -67,7 +70,7 @@ describe('createServiceClient', () => {
     expect(() =>
       createServiceClient({
         supabaseUrl: 'https://test.supabase.co',
-        supabaseAnonKey: 'anon',
+        supabaseAnonKey: 'anon'
       })
     ).toThrow(/Missing required Supabase configuration/);
   });

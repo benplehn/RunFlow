@@ -1,4 +1,5 @@
 -- Test custom database functions and their behavior
+DISCARD ALL;
 BEGIN;
 SELECT plan(3);
 

@@ -7,10 +7,13 @@ This package provides a centralized way to connect to Supabase/Postgres. It is u
 ## 🧠 Key Concepts
 
 ### 1. Singleton Pattern
-Database connections are expensive to create. This package uses the **Singleton Pattern** to ensure we only create *one* connection instance per process, no matter how many times you import the client.
+
+Database connections are expensive to create. This package uses the **Singleton Pattern** to ensure we only create _one_ connection instance per process, no matter how many times you import the client.
 
 ### 2. Row Level Security (RLS)
+
 We use Supabase's RLS to secure data.
+
 - **Anon Client** (`createAnonClient`): Uses the `anon` key. It respects RLS policies. This simulates what a user on the frontend would see.
 - **Service Client** (`createServiceClient`): Uses the `service_role` key. It **bypasses** RLS. This is for admin tasks or background workers that need full access.
 

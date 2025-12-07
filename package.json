@@ -5,37 +5,45 @@
   "packageManager": "pnpm@9.12.2",
   "scripts": {
     "dev": "turbo dev",
-    "dev:api": "SUPABASE_URL=http://localhost:54321 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY1MDIyMTIxLCJleHAiOjIxNDc0ODM2NDd9.d2GDdV71EQRtmmtZ4HBHMUfRE2rvACyajFRbyNnhmcQ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE3NjUwMjIxMjEsImV4cCI6MjE0NzQ4MzY0N30.IhqAZz2fN6eIYahPaXO1mTWkEkdBeFXjpQuYzUSZ8LM pnpm --filter @runflow/api dev",
+    "dev:api": "pnpm exec dotenv -e .env -- pnpm --filter @runflow/api dev",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
     "format": "prettier --write .",
-    "supabase:start": "supabase start --workdir infra/supabase",
-    "supabase:stop": "supabase stop --workdir infra/supabase",
-    "supabase:status": "supabase status --workdir infra/supabase",
-    "supabase:restart": "pnpm supabase:stop && pnpm supabase:start",
-    "db:migrate": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db push --workdir infra/supabase --db-url \"$DB_URL\"",
-    "db:reset": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres}\"; PGSSLMODE=\"${PGSSLMODE:-disable}\" supabase db reset --workdir infra/supabase --db-url \"$DB_URL\" --yes",
-    "db:test": "DB_URL=\"${DATABASE_URL:-postgres://postgres:postgres@localhost:54322/postgres?sslmode=disable}\"; for test in infra/supabase/tests/*.sql; do echo \"Running $test...\"; psql \"$DB_URL\" -f \"$test\" || exit 1; done; echo \"\\n✓ All database tests passed!\"",
-    "db:setup": "pnpm supabase:start && pnpm db:migrate",
+    "db:test": "pnpm exec dotenv -e .env -- sh -c 'for test in infra/supabase/tests/*.sql; do echo \"Running $test...\"; psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f \"$test\" || exit 1; done; echo \"\\n✓ All database tests passed!\"'",
     "test:unit": "turbo test",
     "test:db": "pnpm db:test",
+    "test:api": "pnpm exec dotenv -e .env -- pnpm --filter @runflow/api test",
     "test:all": "pnpm test:unit && pnpm test:db",
     "test:coverage": "turbo test -- --coverage",
     "test:watch": "turbo test -- --watch",
-    "setup": "pnpm install && pnpm db:setup && pnpm build",
-    "clean": "turbo clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+    "typecheck": "turbo build",
+    "setup": "pnpm install && pnpm build",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist .turbo",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
+    "@vitest/coverage-v8": "^2.1.4",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.3.3",
     "turbo": "^2.2.3",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4",
-    "@vitest/coverage-v8": "^2.1.4"
+    "vitest": "^2.1.4"
   }
 }

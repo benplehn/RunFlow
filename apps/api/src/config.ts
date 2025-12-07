@@ -7,5 +7,3 @@ export type ApiConfig = Config;
  * Load configuration using the shared Zod-validated package
  */
 export { loadConfig };
-
-

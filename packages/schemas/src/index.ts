@@ -1,3 +1,4 @@
+export * from './profile';
 export interface PlanSchema {
   id: string;
   category: '5k' | '10k' | 'half-marathon' | 'marathon';

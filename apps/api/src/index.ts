@@ -4,7 +4,6 @@ import { loadConfig } from './config';
 async function start() {
   const config = loadConfig();
 
-
   const server = await createServer(config);
 
   try {

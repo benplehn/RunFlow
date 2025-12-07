@@ -2,8 +2,21 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 import { join } from 'path';
 
-// Load .env.local from monorepo root
-dotenv.config({ path: join(__dirname, '../../../.env.local') });
+// Load .env from monorepo root for local development
+if (!process.env.CI) {
+  const envPath = join(__dirname, '../../../.env');
+  const result = dotenv.config({ path: envPath });
+
+  if (result.error) {
+    // Silent fail safely - maybe file doesn't exist, which is fine if env vars are set otherwise
+    // But for debugging locally it's good to know.
+    // console.debug('No .env file found at root');
+  } else {
+    // console.debug('Loaded local .env file');
+  }
+} else {
+  console.log('CI environment detected. Using injected secrets.');
+}
 
 /**
  * Validated schema for environment variables using Zod.
@@ -12,12 +25,16 @@ dotenv.config({ path: join(__dirname, '../../../.env.local') });
 export const configSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   port: z.coerce.number().default(4000),
-  logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  logLevel: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .default('info'),
   supabase: z.object({
-    url: z.string().url({ message: "SUPABASE_URL must be a valid URL" }),
-    anonKey: z.string().min(1, { message: "SUPABASE_ANON_KEY is required" }),
-    serviceRoleKey: z.string().min(1, { message: "SUPABASE_SERVICE_ROLE_KEY is required" }),
-  }),
+    url: z.string().url({ message: 'SUPABASE_URL must be a valid URL' }),
+    anonKey: z.string().min(1, { message: 'SUPABASE_ANON_KEY is required' }),
+    serviceRoleKey: z
+      .string()
+      .min(1, { message: 'SUPABASE_SERVICE_ROLE_KEY is required' })
+  })
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -35,12 +52,23 @@ export function loadConfig(): Config {
     supabase: {
       url: process.env.SUPABASE_URL,
       anonKey: process.env.SUPABASE_ANON_KEY,
-      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    },
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+    }
+  });
+
+  // Safe Debug: Print which keys are present (masked)
+  console.log('Config Debug:', {
+    hasUrl: !!process.env.SUPABASE_URL,
+    hasAnon: !!process.env.SUPABASE_ANON_KEY,
+    hasService: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    nodeEnv: process.env.NODE_ENV,
+    CI: process.env.CI
   });
 
   if (!result.success) {
-    const errorMessages = result.error.issues.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`).join('\n');
+    const errorMessages = result.error.issues
+      .map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
+      .join('\n');
     throw new Error(`Invalid configuration:\n${errorMessages}`);
   }
 

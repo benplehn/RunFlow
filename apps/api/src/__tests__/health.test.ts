@@ -25,7 +25,7 @@ describe('Health Routes', () => {
     it('returns 200 with ok status', async () => {
       const response = await server.inject({
         method: 'GET',
-        url: '/health',
+        url: '/health'
       });
 
       expect(response.statusCode).toBe(200);
@@ -40,7 +40,7 @@ describe('Health Routes', () => {
     it('returns 200 when database is reachable', async () => {
       const response = await server.inject({
         method: 'GET',
-        url: '/health/db',
+        url: '/health/db'
       });
 
       const body = JSON.parse(response.body) as DbHealthResponse;
@@ -56,15 +56,19 @@ describe('Health Routes', () => {
       vi.spyOn(server.db.service, 'from').mockImplementation(() => {
         return {
           select: () => ({
-            limit: () => Promise.resolve({ error: new Error('Connection failed'), data: null }),
-          }),
+            limit: () =>
+              Promise.resolve({
+                error: new Error('Connection failed'),
+                data: null
+              })
+          })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
       });
 
       const response = await server.inject({
         method: 'GET',
-        url: '/health/db',
+        url: '/health/db'
       });
 
       expect(response.statusCode).toBe(503);
