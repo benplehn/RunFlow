@@ -606,7 +606,13 @@ export type Database = {
     };
     Enums: {
       session_type: 'run' | 'strength' | 'rest' | 'cross_training';
-      training_plan_status: 'active' | 'completed' | 'archived';
+      training_plan_status:
+        | 'active'
+        | 'completed'
+        | 'archived'
+        | 'pending'
+        | 'generated'
+        | 'failed';
     };
     CompositeTypes: {
       _time_trial_type: {
@@ -740,7 +746,14 @@ export const Constants = {
   public: {
     Enums: {
       session_type: ['run', 'strength', 'rest', 'cross_training'],
-      training_plan_status: ['active', 'completed', 'archived']
+      training_plan_status: [
+        'active',
+        'completed',
+        'archived',
+        'pending',
+        'generated',
+        'failed'
+      ]
     }
   }
 } as const;

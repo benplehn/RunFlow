@@ -71,3 +71,9 @@ export const TrainingPlanSchema = z.object({
 });
 
 export type TrainingPlanDTO = z.infer<typeof TrainingPlanSchema>;
+
+export interface GeneratePlanJobData {
+  userId: string;
+  planId: string;
+  params: GeneratePlanInput;
+}

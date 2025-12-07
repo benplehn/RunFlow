@@ -14,8 +14,6 @@ if (!process.env.CI) {
   } else {
     // console.debug('Loaded local .env file');
   }
-} else {
-  console.log('CI environment detected. Using injected secrets.');
 }
 
 /**
@@ -35,6 +33,9 @@ export const configSchema = z.object({
       .string()
       .min(1, { message: 'SUPABASE_SERVICE_ROLE_KEY is required' }),
     jwtSecret: z.string().min(1, { message: 'SUPABASE_JWT_SECRET is required' })
+  }),
+  redis: z.object({
+    url: z.string().url().default('redis://localhost:6379')
   })
 });
 
@@ -55,16 +56,10 @@ export function loadConfig(): Config {
       anonKey: process.env.SUPABASE_ANON_KEY,
       serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
       jwtSecret: process.env.SUPABASE_JWT_SECRET
+    },
+    redis: {
+      url: process.env.REDIS_URL
     }
-  });
-
-  // Safe Debug: Print which keys are present (masked)
-  console.log('Config Debug:', {
-    hasUrl: !!process.env.SUPABASE_URL,
-    hasAnon: !!process.env.SUPABASE_ANON_KEY,
-    hasService: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    nodeEnv: process.env.NODE_ENV,
-    CI: process.env.CI
   });
 
   if (!result.success) {

@@ -4,7 +4,13 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/__tests__",
+    "scripts",
+    "vitest.config.ts"
+  ],
   "references": [
     {
       "path": "../../packages/db"

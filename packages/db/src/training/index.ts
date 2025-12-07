@@ -66,3 +66,5 @@ export async function listTrainingPlans(
   if (error) throw error;
   return data;
 }
+// Export persistence helper
+export * from './persistence';

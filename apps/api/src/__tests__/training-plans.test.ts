@@ -113,22 +113,13 @@ describe('POST /me/training-plans/generate', () => {
       console.error('Request failed:', response.body);
     }
 
-    expect(response.statusCode).toBe(201);
+    expect(response.statusCode).toBe(202);
     const body = JSON.parse(response.body);
-    expect(body.id).toBeDefined();
-    expect(body.name).toContain('MARATHON');
-    expect(body.weeks).toHaveLength(16);
+    expect(body.planId).toBeDefined();
+    expect(body.status).toBe('pending');
 
-    // Verify DB persistence
-    const { data: savedPlan } = await app.db.service
-      .from('user_training_plans')
-      .select('*, planned_weeks(*)')
-      .eq('id', body.id)
-      .single();
-
-    expect(savedPlan).toBeDefined();
-    expect(savedPlan?.duration_weeks).toBe(16);
-    expect(savedPlan?.planned_weeks).toHaveLength(16);
+    // Legacy test kept for input validation check only.
+    // Full E2E logic moved to async-plan.test.ts
   });
 
   it('should return 400 for invalid input', async () => {

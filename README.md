@@ -65,7 +65,7 @@ pnpm dev
 
 ## 🏗️ Architecture
 
-### folder Structure
+### Folder Structure
 
 ```
 RunFlow/
