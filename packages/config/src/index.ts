@@ -27,12 +27,16 @@ console.log('After .env.local load. SUPABASE_URL:', process.env.SUPABASE_URL);
 export const configSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   port: z.coerce.number().default(4000),
-  logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  logLevel: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .default('info'),
   supabase: z.object({
-    url: z.string().url({ message: "SUPABASE_URL must be a valid URL" }),
-    anonKey: z.string().min(1, { message: "SUPABASE_ANON_KEY is required" }),
-    serviceRoleKey: z.string().min(1, { message: "SUPABASE_SERVICE_ROLE_KEY is required" }),
-  }),
+    url: z.string().url({ message: 'SUPABASE_URL must be a valid URL' }),
+    anonKey: z.string().min(1, { message: 'SUPABASE_ANON_KEY is required' }),
+    serviceRoleKey: z
+      .string()
+      .min(1, { message: 'SUPABASE_SERVICE_ROLE_KEY is required' })
+  })
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -50,12 +54,14 @@ export function loadConfig(): Config {
     supabase: {
       url: process.env.SUPABASE_URL,
       anonKey: process.env.SUPABASE_ANON_KEY,
-      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    },
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+    }
   });
 
   if (!result.success) {
-    const errorMessages = result.error.issues.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`).join('\n');
+    const errorMessages = result.error.issues
+      .map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
+      .join('\n');
     throw new Error(`Invalid configuration:\n${errorMessages}`);
   }
 

@@ -9,6 +9,7 @@
 This is the backend repository for RunFlow. It is a **monorepo**, meaning multiple related projects live together in one place.
 
 It includes:
+
 - **API**: A Fastify server that handles requests from the frontend app.
 - **Worker**: A background job processor (using BullMQ) for heavy tasks.
 - **Packages**: Shared code (database clients, types, configs) used by both the API and Worker.
@@ -19,30 +20,37 @@ It includes:
 ## 🚀 Quick Start Guide
 
 **Prerequisites:**
+
 - [Node.js](https://nodejs.org/) (v20+)
 - [pnpm](https://pnpm.io/) (v9+)
-- [Docker Desktop](https://www.docker.com/) (for running the database locally)
 
 ### 1. Setup the project
+
 ```bash
 # Install all dependencies for all apps and packages
 pnpm install
 ```
 
-### 2. Start the database (Supabase)
-Make sure Docker is running, then:
+### 2. Configure Environment
+
+Ensure you have a `.env` file with your Supabase Cloud credentials (see `.env.example`):
+
 ```bash
-# Starts Supabase locally and applies database migrations
-pnpm db:setup
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+DATABASE_URL=...
 ```
 
 ### 3. Run the development server
+
 ```bash
 # Starts the API, Worker, and watches for changes
 pnpm dev
 ```
 
-That's it! 
+That's it!
+
 - The **API** will be running at `http://localhost:4000`.
 - The **Supabase Dashboard** (local) will be at `http://localhost:54323`.
 
@@ -53,6 +61,7 @@ That's it!
 This project uses **Turborepo** to manage tasks. Instead of running commands in each folder, you run them from the root, and Turbo handles the rest.
 
 ### Folder Structure
+
 ```
 RunFlow/
 ├── apps/               # Runnable applications
@@ -72,29 +81,33 @@ RunFlow/
 
 ### Common Commands
 
-| Command | Description |
-| :--- | :--- |
-| `pnpm dev` | Start everything in development mode |
-| `pnpm build` | Compile all TypeScript code |
-| `pnpm test` | Run unit tests |
-| `pnpm test:db` | Run database tests (pgTAP) |
-| `pnpm db:migrate` | Update your local database schema |
-| `pnpm db:reset` | **Wipe** local DB and re-apply all migrations |
+| Command           | Description                                   |
+| :---------------- | :-------------------------------------------- |
+| `pnpm dev`        | Start everything in development mode          |
+| `pnpm build`      | Compile all TypeScript code                   |
+| `pnpm test`       | Run unit tests                                |
+| `pnpm test:db`    | Run database tests (pgTAP)                    |
+| `pnpm db:migrate` | Update your local database schema             |
+| `pnpm db:reset`   | **Wipe** local DB and re-apply all migrations |
 
 ---
 
 ## 🧠 Key Concepts for Beginners
 
 ### 1. The Monorepo (Workspaces)
+
 We use `pnpm workspaces`. Code in `packages/` can be imported by `apps/`.
-*Example:* The `api` app imports the database client from `@runflow/db` (which lives in `packages/db`).
+_Example:_ The `api` app imports the database client from `@runflow/db` (which lives in `packages/db`).
 
 ### 2. The Database (Supabase)
+
 We use Supabase (which is PostgreSQL + tools).
+
 - **Migrations**: SQL files in `infra/supabase/migrations` define the database structure.
 - **Types**: We generate TypeScript types from the DB schema automatically (not set up yet, but coming soon).
 
 ### 3. The API (Fastify)
+
 Fastify is a fast, low-overhead web framework for Node.js. It's similar to Express but faster and with better TypeScript support.
 
 ---

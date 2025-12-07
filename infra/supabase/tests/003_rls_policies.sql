@@ -1,4 +1,5 @@
 -- Test Row Level Security (RLS) is enabled and policies are defined
+DISCARD ALL;
 BEGIN;
 SELECT plan(16);
 

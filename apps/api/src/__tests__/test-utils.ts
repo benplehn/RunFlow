@@ -15,10 +15,14 @@ export function ensureSupabaseEnv(): void {
 
   const keysPathCandidates = [
     join(process.cwd(), 'infra/supabase/.temp/keys.json'),
-    join(process.cwd(), '..', '..', 'infra/supabase/.temp/keys.json'), // when tests run from app dir
+    join(process.cwd(), '..', '..', 'infra/supabase/.temp/keys.json') // when tests run from app dir
   ];
 
-  let keys: { anon_key?: string; service_role_key?: string; jwt_secret?: string } | null = null;
+  let keys: {
+    anon_key?: string;
+    service_role_key?: string;
+    jwt_secret?: string;
+  } | null = null;
   for (const p of keysPathCandidates) {
     if (existsSync(p)) {
       try {

@@ -11,3 +11,6 @@ coverage
 .temp
 .cache
 .env.*
+
+*.tsbuildinfo
+*.log

@@ -1,4 +1,5 @@
 -- Test schema structure, tables, indexes, and constraints
+DISCARD ALL;
 BEGIN;
 SELECT plan(37);
 

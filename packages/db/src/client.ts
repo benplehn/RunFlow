@@ -21,7 +21,9 @@ let serviceClientInstance: SupabaseClient<Database> | null = null;
  *
  * Note: Ce client est sûr pour une utilisation côté client car il respecte RLS
  */
-export function createAnonClient(config: SupabaseClientConfig): SupabaseClient<Database> {
+export function createAnonClient(
+  config: SupabaseClientConfig
+): SupabaseClient<Database> {
   // Early return pattern: Si le client existe déjà, on le retourne
   if (anonClientInstance) {
     return anonClientInstance;
@@ -30,7 +32,9 @@ export function createAnonClient(config: SupabaseClientConfig): SupabaseClient<D
   // Guard clause: Validation des paramètres requis
   // Fail fast pattern: On échoue immédiatement si la config est invalide
   if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    throw new Error('Missing required Supabase configuration: supabaseUrl and supabaseAnonKey');
+    throw new Error(
+      'Missing required Supabase configuration: supabaseUrl and supabaseAnonKey'
+    );
   }
 
   // Lazy initialization: Création du client seulement si nécessaire
@@ -40,8 +44,8 @@ export function createAnonClient(config: SupabaseClientConfig): SupabaseClient<D
     {
       auth: {
         // Pas de persistance de session côté serveur (stateless)
-        persistSession: false,
-      },
+        persistSession: false
+      }
     }
   );
 
@@ -61,7 +65,9 @@ export function createAnonClient(config: SupabaseClientConfig): SupabaseClient<D
  * ⚠️ SÉCURITÉ: Ce client ne doit JAMAIS être exposé côté client!
  * Usage approprié: Backend API, workers, scripts admin uniquement
  */
-export function createServiceClient(config: SupabaseClientConfig): SupabaseClient<Database> {
+export function createServiceClient(
+  config: SupabaseClientConfig
+): SupabaseClient<Database> {
   // Early return pattern
   if (serviceClientInstance) {
     return serviceClientInstance;
@@ -69,7 +75,9 @@ export function createServiceClient(config: SupabaseClientConfig): SupabaseClien
 
   // Guard clause: Validation stricte pour le service client
   if (!config.supabaseUrl || !config.supabaseServiceRoleKey) {
-    throw new Error('Missing required Supabase configuration: supabaseUrl and supabaseServiceRoleKey');
+    throw new Error(
+      'Missing required Supabase configuration: supabaseUrl and supabaseServiceRoleKey'
+    );
   }
 
   // Lazy initialization avec config backend optimisée
@@ -80,8 +88,8 @@ export function createServiceClient(config: SupabaseClientConfig): SupabaseClien
       auth: {
         // Backend: pas de sessions ni de refresh tokens
         persistSession: false,
-        autoRefreshToken: false,
-      },
+        autoRefreshToken: false
+      }
     }
   );
 
@@ -112,7 +120,9 @@ export function resetClients(): void {
  *
  * Note: Query légère (LIMIT 1) pour minimiser l'impact
  */
-export async function testConnection(client: SupabaseClient<Database>): Promise<boolean> {
+export async function testConnection(
+  client: SupabaseClient<Database>
+): Promise<boolean> {
   try {
     // Requête minimale pour tester la connexion
     const { error } = await client.from('profiles').select('id').limit(1);

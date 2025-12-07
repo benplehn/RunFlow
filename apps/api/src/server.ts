@@ -9,11 +9,13 @@ import type { ApiConfig } from './config';
 
 /**
  * Factory function to create the Fastify server instance.
- * 
+ *
  * @param config - The validated configuration object (env vars).
  * @returns The initialized Fastify application.
  */
-export async function createServer(config: ApiConfig): Promise<FastifyInstance> {
+export async function createServer(
+  config: ApiConfig
+): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: {
       level: config.logLevel,
@@ -23,30 +25,30 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
           options: {
             colorize: true,
             translateTime: 'HH:MM:ss Z',
-            ignore: 'pid,hostname',
-          },
-        },
-      }),
-    },
+            ignore: 'pid,hostname'
+          }
+        }
+      })
+    }
   });
 
   // Register CORS (Cross-Origin Resource Sharing)
   // This allows frontend apps connecting from different domains/ports to access this API.
   await fastify.register(cors, {
     origin: config.nodeEnv === 'production' ? false : true, // In prod, configure specific origins
-    credentials: true,
+    credentials: true
   });
 
   // Initialize Supabase clients
   const anonClient = createAnonClient({
     supabaseUrl: config.supabase.url,
-    supabaseAnonKey: config.supabase.anonKey,
+    supabaseAnonKey: config.supabase.anonKey
   });
 
   const serviceClient = createServiceClient({
     supabaseUrl: config.supabase.url,
     supabaseAnonKey: config.supabase.anonKey,
-    supabaseServiceRoleKey: config.supabase.serviceRoleKey,
+    supabaseServiceRoleKey: config.supabase.serviceRoleKey
   });
 
   // Decorate fastify instance with db clients
@@ -54,7 +56,7 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
   // It's a form of Dependency Injection.
   fastify.decorate('db', {
     anon: anonClient,
-    service: serviceClient,
+    service: serviceClient
   });
 
   // Register Auth Plugin
@@ -68,7 +70,7 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
         info: {
           title: 'RunFlow API',
           description: 'Backend API for RunFlow application',
-          version: '0.1.0',
+          version: '0.1.0'
         },
         host: `localhost:${config.port}`,
         schemes: ['http'],
@@ -79,18 +81,18 @@ export async function createServer(config: ApiConfig): Promise<FastifyInstance> 
             type: 'apiKey',
             name: 'Authorization',
             in: 'header',
-            description: 'Supabase JWT (Bearer <token>)',
-          },
-        },
-      },
+            description: 'Supabase JWT (Bearer <token>)'
+          }
+        }
+      }
     });
 
     await fastify.register(fastifySwaggerUi, {
       routePrefix: '/documentation',
       uiConfig: {
         docExpansion: 'list',
-        deepLinking: false,
-      },
+        deepLinking: false
+      }
     });
   }
 

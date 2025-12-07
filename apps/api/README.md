@@ -34,12 +34,10 @@ src/
 import type { FastifyInstance } from 'fastify';
 
 export async function userRoutes(fastify: FastifyInstance) {
-  
   // GET /users/me
   fastify.get('/users/me', async (request, reply) => {
     return { id: 'current-user-id', name: 'Ben' };
   });
-
 }
 ```
 
@@ -54,7 +52,7 @@ await app.register(userRoutes);
 
 ### Running Locally
 
-To run *only* this app (ignoring the worker):
+To run _only_ this app (ignoring the worker):
 
 ```bash
 pnpm --filter @runflow/api dev
