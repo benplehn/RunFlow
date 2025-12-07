@@ -1,5 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database, SupabaseClientConfig } from './types';
+import type { Database } from './types';
+
+export interface SupabaseClientConfig {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  supabaseServiceRoleKey?: string;
+}
 
 /**
  * Singleton Supabase client instances
@@ -132,4 +138,33 @@ export async function testConnection(
     // Toute exception = connexion KO
     return false;
   }
+}
+
+/**
+ * Create a client authenticated as a specific user
+ *
+ * Pattern: Per-request client context
+ * Usage: Pass the JWT from the API request to forward auth context to Supabase
+ *
+ * @param config - Base config
+ * @param token - JWT Access Token (without Bearer prefix usually, but Supabase handles it)
+ */
+export function createAuthenticatedClient(
+  config: SupabaseClientConfig,
+  token: string
+): SupabaseClient<Database> {
+  if (!config.supabaseUrl || !config.supabaseAnonKey) {
+    throw new Error('Supabase URL and Anon Key required');
+  }
+
+  return createClient<Database>(config.supabaseUrl, config.supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    },
+    auth: {
+      persistSession: false
+    }
+  });
 }

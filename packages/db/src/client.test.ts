@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createAnonClient, createServiceClient, resetClients } from './client';
-import type { SupabaseClientConfig } from './types';
+import type { SupabaseClientConfig } from './client';
 
 // Mock @supabase/supabase-js
 vi.mock('@supabase/supabase-js', () => ({

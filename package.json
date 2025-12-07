@@ -10,8 +10,6 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "format": "prettier --write .",
-    "db:migrate": "pnpm exec dotenv -e .env -- supabase db push --workdir infra/supabase",
-    "db:reset": "pnpm exec dotenv -e .env -- supabase db reset --workdir infra/supabase",
     "db:test": "pnpm exec dotenv -e .env -- sh -c 'for test in infra/supabase/tests/*.sql; do echo \"Running $test...\"; psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f \"$test\" || exit 1; done; echo \"\\n✓ All database tests passed!\"'",
     "test:unit": "turbo test",
     "test:db": "pnpm db:test",

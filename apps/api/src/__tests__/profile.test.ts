@@ -1,8 +1,27 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  vi,
+  beforeEach
+} from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { createServer } from '../server';
 import { loadConfig } from '../config';
 import { ensureSupabaseEnv } from './test-utils';
+
+// Mock the DB package
+vi.mock('@runflow/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@runflow/db')>();
+  return {
+    ...actual,
+    createAuthenticatedClient: vi.fn()
+  };
+});
+
+import { createAuthenticatedClient } from '@runflow/db';
 
 describe('Profile Routes', () => {
   let server: FastifyInstance;
@@ -31,6 +50,10 @@ describe('Profile Routes', () => {
     created_at: new Date().toISOString()
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('GET /me/profile', () => {
     it('returns 401 if not authenticated', async () => {
       const response = await server.inject({
@@ -41,28 +64,23 @@ describe('Profile Routes', () => {
     });
 
     it('returns profile data if authenticated', async () => {
-      // Mock Auth
+      // Mock Auth via server helper mechanism (or assume requireAuth passes if we mock the request decoration)
+      // Actually, requireAuth uses server.db.anon.auth.getUser
       server.db.anon.auth.getUser = vi.fn().mockResolvedValue({
         data: { user: mockUser },
         error: null
       });
 
-      // Mock DB: from('profiles').select(...).eq(...).single()
-      const fromSpy = vi.spyOn(server.db.service, 'from');
-
-      // We need to return a chainable mock object
-      const selectMock = vi.fn();
-      const eqMock = vi.fn();
+      // Mock createAuthenticatedClient to return our Chainable mock
       const singleMock = vi
         .fn()
         .mockResolvedValue({ data: mockProfile, error: null });
+      const eqMock = vi.fn().mockReturnValue({ single: singleMock });
+      const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+      const fromMock = vi.fn().mockReturnValue({ select: selectMock });
 
-      fromSpy.mockReturnValue({
-        select: selectMock.mockReturnValue({
-          eq: eqMock.mockReturnValue({
-            single: singleMock
-          })
-        })
+      vi.mocked(createAuthenticatedClient).mockReturnValue({
+        from: fromMock
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
@@ -76,6 +94,12 @@ describe('Profile Routes', () => {
       const body = JSON.parse(response.body);
       expect(body.id).toBe(mockUser.id);
       expect(body.display_name).toBe('Test Runner');
+
+      // Verification
+      expect(createAuthenticatedClient).toHaveBeenCalled();
+      expect(fromMock).toHaveBeenCalledWith('profiles');
+      // RLS is assumed, but we check if we called eq(id, user.id) as strictly implemented
+      expect(eqMock).toHaveBeenCalledWith('id', mockUser.id);
     });
   });
 
@@ -87,25 +111,18 @@ describe('Profile Routes', () => {
         error: null
       });
 
-      // Mock DB: from('profiles').update(...).eq(...).select().single()
-      const fromSpy = vi.spyOn(server.db.service, 'from');
-
-      const updateMock = vi.fn();
-      const eqMock = vi.fn();
-      const selectMock = vi.fn();
+      // Mock createAuthenticatedClient
       const singleMock = vi.fn().mockResolvedValue({
         data: { ...mockProfile, display_name: 'Updated Name' },
         error: null
       });
+      const selectMock = vi.fn().mockReturnValue({ single: singleMock });
+      const eqMock = vi.fn().mockReturnValue({ select: selectMock });
+      const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+      const fromMock = vi.fn().mockReturnValue({ update: updateMock });
 
-      fromSpy.mockReturnValue({
-        update: updateMock.mockReturnValue({
-          eq: eqMock.mockReturnValue({
-            select: selectMock.mockReturnValue({
-              single: singleMock
-            })
-          })
-        })
+      vi.mocked(createAuthenticatedClient).mockReturnValue({
+        from: fromMock
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
@@ -122,6 +139,10 @@ describe('Profile Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.display_name).toBe('Updated Name');
+
+      expect(updateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ display_name: 'Updated Name' })
+      );
     });
 
     it('validates input with Zod', async () => {

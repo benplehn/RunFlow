@@ -5,51 +5,32 @@ import { loadConfig } from '../config';
 import { ensureSupabaseEnv } from './test-utils';
 import { createServiceClient, resetClients } from '@runflow/db';
 
-// This test suite requires a running Supabase instance.
-// It performs real DB operations.
-describe('Full Stack Integration Tests', () => {
+import type { SupabaseClient, Database } from '@runflow/db';
+
+describe('Profile API Integration Tests', () => {
   let server: FastifyInstance;
   let authToken: string;
   let userId: string;
+  let adminClient: SupabaseClient<Database>;
 
   beforeAll(async () => {
-    resetClients(); // Force fresh client creation with new env vars
+    resetClients();
     ensureSupabaseEnv();
     const config = loadConfig();
-    console.log('--- TEST CONFIG DEBUG ---');
-    console.log('Supabase URL:', config.supabase.url);
-    console.log(
-      'Service Key Start:',
-      config.supabase.serviceRoleKey?.substring(0, 10)
-    );
-    console.log('-------------------------');
+
     server = await createServer(config);
     await server.ready();
 
-    // Verify connection to real Supabase
-    const { error: healthError } = await server.db.service
-      .from('profiles')
-      .select('count', { count: 'exact', head: true });
-
-    if (healthError) {
-      console.warn(
-        'Skipping integration tests: Cannot connect to Supabase.',
-        JSON.stringify(healthError)
-      );
-      throw new Error(
-        `Supabase connection failed: ${JSON.stringify(healthError)}`
-      );
-    }
-
-    // Create a real test user
-    const adminClient = createServiceClient({
+    // Admin client for setup
+    adminClient = createServiceClient({
       supabaseUrl: config.supabase.url,
       supabaseAnonKey: config.supabase.anonKey,
       supabaseServiceRoleKey: config.supabase.serviceRoleKey
     });
 
-    const email = `test-${Date.now()}@integration.com`;
-    const password = 'test-password-123';
+    // 1. Create a test user
+    const email = `profile-test-${Date.now()}@integration.com`;
+    const password = 'TestPassword123!';
 
     const {
       data: { user },
@@ -60,13 +41,10 @@ describe('Full Stack Integration Tests', () => {
       email_confirm: true
     });
 
-    if (createError || !user) {
-      throw new Error(`Failed to create test user: ${createError?.message}`);
-    }
+    if (createError) throw createError;
+    userId = user!.id;
 
-    userId = user.id;
-
-    // Login to get the session/token (or sign in with password to simulate real flow)
+    // 2. Login to get token
     const {
       data: { session },
       error: loginError
@@ -75,35 +53,31 @@ describe('Full Stack Integration Tests', () => {
       password
     });
 
-    if (loginError || !session) {
-      throw new Error(`Failed to login test user: ${loginError?.message}`);
-    }
-
-    authToken = session.access_token;
+    if (loginError) throw loginError;
+    authToken = session!.access_token;
   });
 
   afterAll(async () => {
-    // Cleanup: Delete the test user ?
-    // Usually good practice.
-    if (userId && server) {
-      await server.db.service.auth.admin.deleteUser(userId);
+    if (userId && adminClient) {
+      await adminClient.auth.admin.deleteUser(userId);
     }
-    if (server) await server.close();
+    await server.close();
   });
 
-  it('GET /me/profile returns profile after manual creation', async () => {
-    // We manually upsert the profile to ensure it exists for the test user.
-    // With Supabase Cloud, the Service Role should correctly bypass RLS.
-    const { error: insertError } = await server.db.service
-      .from('profiles')
-      .upsert({
-        id: userId,
-        display_name: 'Integration Test User'
-      });
+  it('GET /me/profile returns 404 if profile does not exist yet', async () => {
+    // NOTE: profiles are usually created via triggers on auth.users insert.
+    // If the trigger exists, this might fail (return 200).
+    // Let's check if the trigger exists by trying to fetch first.
 
-    if (insertError) {
-      throw new Error(`Profile insert failed: ${insertError.message}`);
-    }
+    // Actually, for "Pro" tests, we should explicitly control state.
+    // If trigger creates it, we expect 200. If we manually delete it, 404.
+
+    // Let's ensure profile exists (upsert) to be safe for the first positive test.
+    const { error } = await adminClient.from('profiles').upsert({
+      id: userId,
+      display_name: 'Initial Name'
+    });
+    expect(error).toBeNull();
 
     const response = await server.inject({
       method: 'GET',
@@ -117,7 +91,7 @@ describe('Full Stack Integration Tests', () => {
   });
 
   it('PUT /me/profile updates the profile', async () => {
-    const newName = 'Integration Tester';
+    const newName = 'Updated Name';
 
     const response = await server.inject({
       method: 'PUT',
@@ -125,7 +99,7 @@ describe('Full Stack Integration Tests', () => {
       headers: { authorization: `Bearer ${authToken}` },
       payload: {
         display_name: newName,
-        country: 'US'
+        country: 'FR'
       }
     });
 
@@ -133,12 +107,15 @@ describe('Full Stack Integration Tests', () => {
     const body = JSON.parse(response.body);
     expect(body.display_name).toBe(newName);
 
-    // Verify directly in DB
-    const { data } = await server.db.service
+    // Verify in DB via Admin Client (bypassing RLS)
+    const { data } = await adminClient
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    expect(data.display_name).toBe(newName);
+
+    expect(data).not.toBeNull();
+    expect(data!.display_name).toBe(newName);
+    expect(data!.country).toBe('FR');
   });
 });

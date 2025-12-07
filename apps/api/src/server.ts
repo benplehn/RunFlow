@@ -40,6 +40,16 @@ export async function createServer(
     supabaseAnonKey: config.supabase.anonKey
   });
 
+  console.log('[Server] Initializing Supabase clients...');
+  console.log(
+    '[Server] Service Key defined:',
+    !!config.supabase.serviceRoleKey
+  );
+  console.log(
+    '[Server] Service Key length:',
+    config.supabase.serviceRoleKey?.length
+  );
+
   const serviceClient = createServiceClient({
     supabaseUrl: config.supabase.url,
     supabaseAnonKey: config.supabase.anonKey,

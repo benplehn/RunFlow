@@ -1,7 +1,23 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { UpdateProfileSchema } from '@runflow/schemas';
+import { createAuthenticatedClient } from '@runflow/db';
+import { loadConfig } from '../config';
 
 export async function profileRoutes(fastify: FastifyInstance) {
+  // Helper to get auth client
+  const getClient = (request: FastifyRequest) => {
+    // We assume the token is present because of preHandler: [fastify.requireAuth]
+    const token = request.headers.authorization?.split(' ')[1] || '';
+    const config = loadConfig();
+    return createAuthenticatedClient(
+      {
+        supabaseUrl: config.supabase.url,
+        supabaseAnonKey: config.supabase.anonKey
+      },
+      token
+    );
+  };
+
   fastify.get(
     '/me/profile',
     {
@@ -44,21 +60,24 @@ export async function profileRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const user = request.user!;
+      const client = getClient(request);
 
-      const { data, error } = await request.server.db.service
+      // Authenticated client uses RLS policies.
+      // We expect the policy to allow "users can select their own profile".
+      // Usually matching "auth.uid() = id".
+      const { data, error } = await client
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', user.id) // Still good to be explicit for single row fetch, though RLS enforces it.
         .single();
 
       if (error) {
-        console.error('Profile fetch error:', error);
+        // If RLS filters the row out, .single() returns error (PGRST116)
+        if (error.code === 'PGRST116') {
+          return reply.code(404).send({ message: 'Profile not found' });
+        }
         request.log.error({ err: error }, 'Failed to fetch profile');
         return reply.code(500).send({ message: 'Internal Server Error' });
-      }
-
-      if (!data) {
-        return reply.code(404).send({ message: 'Profile not found' });
       }
 
       return data;
@@ -115,6 +134,7 @@ export async function profileRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const user = request.user!;
+      const client = getClient(request);
 
       // Validate body with Zod
       const result = UpdateProfileSchema.safeParse(request.body);
@@ -128,7 +148,8 @@ export async function profileRoutes(fastify: FastifyInstance) {
 
       const updates = result.data;
 
-      const { data, error } = await request.server.db.service
+      // RLS Policy for UPDATE should allow "users can update own profile".
+      const { data, error } = await client
         .from('profiles')
         .update(updates)
         .eq('id', user.id)
