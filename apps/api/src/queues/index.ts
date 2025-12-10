@@ -17,3 +17,9 @@ export const generatePlanQueue = new Queue<GeneratePlanJobData>(
     connection
   }
 );
+
+export const SYNC_STRAVA_QUEUE_NAME = 'sync-strava';
+
+export const syncStravaQueue = new Queue(SYNC_STRAVA_QUEUE_NAME, {
+  connection
+});

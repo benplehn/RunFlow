@@ -15,6 +15,7 @@ This is the backend repository for **RunFlow**, utilizing a **Monorepo** archite
 - **API**: Fastify (TypeScript)
 - **Database**: Supabase (PostgreSQL + Auth)
 - **Background Jobs**: BullMQ (Redis)
+- **Sessions**: Real-time GPS tracking & telemetry ingestion.
 
 ---
 

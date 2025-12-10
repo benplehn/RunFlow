@@ -36,6 +36,10 @@ export const configSchema = z.object({
   }),
   redis: z.object({
     url: z.string().url().default('redis://localhost:6379')
+  }),
+  strava: z.object({
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional()
   })
 });
 
@@ -59,6 +63,10 @@ export function loadConfig(): Config {
     },
     redis: {
       url: process.env.REDIS_URL
+    },
+    strava: {
+      clientId: process.env.STRAVA_CLIENT_ID,
+      clientSecret: process.env.STRAVA_CLIENT_SECRET
     }
   });
 

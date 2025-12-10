@@ -9,6 +9,7 @@ import { authRoutes } from './routes/auth';
 import { trainingPlanRoutes } from './routes/training-plans';
 import { profileRoutes } from './routes/profile';
 import { sessionsRoutes } from './routes/sessions';
+import { integrationsRoutes } from './routes/integrations';
 import authPlugin from './plugins/auth';
 import type { ApiConfig } from './config';
 
@@ -105,5 +106,6 @@ export async function createServer(
   await fastify.register(trainingPlanRoutes, { prefix: '/me/training-plans' });
   await fastify.register(profileRoutes, { prefix: '/me/profile' });
   await fastify.register(sessionsRoutes, { prefix: '/me/sessions' });
+  await fastify.register(integrationsRoutes, { prefix: '/integrations' });
   return fastify;
 }

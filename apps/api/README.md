@@ -66,3 +66,15 @@ The server will start on `http://localhost:4000`.
 ### Training Plans
 
 - `POST /me/training-plans/generate`: Generates and saves a full training plan (Plan -> Weeks -> Sessions) in a single atomic transaction.
+
+### Sessions (Run Tracking)
+
+- `POST /me/sessions`: Use this to **start** a new tracking session. Returns a session ID.
+- `PATCH /me/sessions/:id`: Use this to **update** status (e.g. `completed`) or save summary metrics (distance, duration).
+- `POST /me/sessions/:id/points`: Use this to **ingest** high-frequency GPS/HR data points in batches.
+
+### Integrations (Strava)
+
+- `GET /integrations/strava/auth-url`: Returns the correct OAuth redirection URL to Strava.
+- `POST /integrations/strava/exchange`: Handles the authorization code exchange, saves tokens securely, and starts an initial sync.
+- `POST /integrations/strava/sync`: Manually triggers a background synchronization of activity data.
