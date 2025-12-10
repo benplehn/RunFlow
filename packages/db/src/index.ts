@@ -7,5 +7,5 @@ export {
   testConnection,
   type SupabaseClientConfig
 } from './client';
-export type { Database } from './types';
+export type { Database, Json } from './types';
 export type { SupabaseClient, User, Session } from '@supabase/supabase-js';

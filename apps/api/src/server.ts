@@ -4,7 +4,11 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { createAnonClient, createServiceClient } from '@runflow/db';
 import { getLoggerOptions } from '@runflow/telemetry';
-import { registerRoutes } from './routes';
+import { healthRoutes } from './routes/health';
+import { authRoutes } from './routes/auth';
+import { trainingPlanRoutes } from './routes/training-plans';
+import { profileRoutes } from './routes/profile';
+import { sessionsRoutes } from './routes/sessions';
 import authPlugin from './plugins/auth';
 import type { ApiConfig } from './config';
 
@@ -95,7 +99,11 @@ export async function createServer(
 
   // Register routes
   // We separate route definitions into different files to keep this file clean.
-  await registerRoutes(fastify);
-
+  // Register routes
+  await fastify.register(healthRoutes, { prefix: '/health' });
+  await fastify.register(authRoutes); // No prefix for /me usually, or check auth.ts
+  await fastify.register(trainingPlanRoutes, { prefix: '/me/training-plans' });
+  await fastify.register(profileRoutes, { prefix: '/me/profile' });
+  await fastify.register(sessionsRoutes, { prefix: '/me/sessions' });
   return fastify;
 }

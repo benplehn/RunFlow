@@ -322,6 +322,99 @@ export type Database = {
         };
         Relationships: [];
       };
+
+      sessions: {
+        Row: {
+          created_at: string;
+          end_time: string | null;
+          id: string;
+          metrics: Json | null;
+          planned_session_id: string | null;
+          start_time: string;
+          status: Database['public']['Enums']['session_status'];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          end_time?: string | null;
+          id?: string;
+          metrics?: Json | null;
+          planned_session_id?: string | null;
+          start_time?: string;
+          status?: Database['public']['Enums']['session_status'];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          end_time?: string | null;
+          id?: string;
+          metrics?: Json | null;
+          planned_session_id?: string | null;
+          start_time?: string;
+          status?: Database['public']['Enums']['session_status'];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sessions_planned_session_id_fkey';
+            columns: ['planned_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'planned_sessions';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      session_points: {
+        Row: {
+          alt: number | null;
+          data: Json | null;
+          heart_rate: number | null;
+          id: number;
+          lat: number;
+          lon: number;
+          session_id: string;
+          timestamp: string;
+        };
+        Insert: {
+          alt?: number | null;
+          data?: Json | null;
+          heart_rate?: number | null;
+          id?: never;
+          lat: number;
+          lon: number;
+          session_id: string;
+          timestamp: string;
+        };
+        Update: {
+          alt?: number | null;
+          data?: Json | null;
+          heart_rate?: number | null;
+          id?: never;
+          lat?: number;
+          lon?: number;
+          session_id?: string;
+          timestamp?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'session_points_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'sessions';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       user_training_plans: {
         Row: {
           created_at: string;
@@ -605,6 +698,7 @@ export type Database = {
         | { Args: never; Returns: boolean[] };
     };
     Enums: {
+      session_status: 'in_progress' | 'completed' | 'aborted';
       session_type: 'run' | 'strength' | 'rest' | 'cross_training';
       training_plan_status:
         | 'active'
@@ -746,6 +840,7 @@ export const Constants = {
   public: {
     Enums: {
       session_type: ['run', 'strength', 'rest', 'cross_training'],
+      session_status: ['in_progress', 'completed', 'aborted'],
       training_plan_status: [
         'active',
         'completed',

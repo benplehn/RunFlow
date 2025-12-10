@@ -9,7 +9,7 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /health - Basic health check
   // The generic <{ Reply: HealthResponse }> ensures our return type matches the interface.
   fastify.get<{ Reply: HealthResponse }>(
-    '/health',
+    '/',
     async (_request: FastifyRequest, reply: FastifyReply) => {
       return reply.code(200).send({
         status: 'ok',
@@ -20,7 +20,7 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
 
   // GET /health/db - Database health check
   fastify.get<{ Reply: DbHealthResponse }>(
-    '/health/db',
+    '/db',
     async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
         // Simple SELECT 1 equivalent - query any table

@@ -35,6 +35,6 @@ describe('Server Initialization', () => {
 
     const routes = server.printRoutes();
     expect(routes).toContain('health (GET');
-    expect(routes).toContain('/db (GET');
+    expect(routes).toContain('db (GET');
   });
 });
