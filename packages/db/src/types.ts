@@ -70,6 +70,134 @@ export type Database = {
         };
         Relationships: [];
       };
+      groups: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          visibility: Database['public']['Enums']['group_visibility'];
+          owner_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          visibility?: Database['public']['Enums']['group_visibility'];
+          owner_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          visibility?: Database['public']['Enums']['group_visibility'];
+          owner_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'groups_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      group_members: {
+        Row: {
+          id: string;
+          group_id: string;
+          user_id: string;
+          role: Database['public']['Enums']['group_role'];
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          user_id: string;
+          role?: Database['public']['Enums']['group_role'];
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          user_id?: string;
+          role?: Database['public']['Enums']['group_role'];
+          joined_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'group_members_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'group_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      group_events: {
+        Row: {
+          id: string;
+          group_id: string;
+          creator_id: string;
+          title: string;
+          description: string | null;
+          start_time: string;
+          end_time: string | null;
+          location: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          creator_id: string;
+          title: string;
+          description?: string | null;
+          start_time: string;
+          end_time?: string | null;
+          location?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          creator_id?: string;
+          title?: string;
+          description?: string | null;
+          start_time?: string;
+          end_time?: string | null;
+          location?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'group_events_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'group_events_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       permission_check_trigger: {
         Row: {
           id: number | null;
@@ -621,6 +749,7 @@ export type Database = {
       };
     };
     Functions: {
+      get_auth_debug: { Args: never; Returns: Json };
       _cleanup: { Args: never; Returns: boolean };
       _contract_on: { Args: { '': string }; Returns: unknown };
       _currtest: { Args: never; Returns: number };
@@ -727,6 +856,8 @@ export type Database = {
         | { Args: { '': string }; Returns: boolean[] };
     };
     Enums: {
+      group_visibility: 'public' | 'private' | 'unlisted';
+      group_role: 'owner' | 'admin' | 'member';
       session_status: 'in_progress' | 'completed' | 'aborted';
       session_type: 'run' | 'strength' | 'rest' | 'cross_training';
       training_plan_status:

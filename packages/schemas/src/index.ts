@@ -1,6 +1,7 @@
 export * from './profile';
 export * from './training';
 export * from './sessions';
+export * from './groups';
 
 export interface PlanSchema {
   id: string;

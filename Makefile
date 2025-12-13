@@ -69,5 +69,11 @@ validate-step-7: ## Step 7: Validate async features (Production Grade Tests)
 	@echo "========================================"
 	pnpm --filter @runflow/api test
 
-ci: lint build test-all validate-step-7 ## Run CI pipeline locally
+validate-social-groups: ## Step 10: Validate Social Groups Feature
+	@echo "========================================"
+	@echo "🚀 Running Step 10 Validation: Social Groups"
+	@echo "========================================"
+	pnpm --filter @runflow/api test src/__tests__/groups.test.ts
+
+ci: lint build test-all validate-step-7 validate-social-groups ## Run CI pipeline locally
 	@echo "✓ CI pipeline completed successfully"
